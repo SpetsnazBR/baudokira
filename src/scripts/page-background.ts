@@ -15,7 +15,7 @@ interface LetterInstance extends LetterPosition {
  * PageBackground class
  */
 class PageBackground {
-	private LETTER_FADE_DURATION: [number, number] = [2, 7]; // Seconds
+	private LETTER_FADE_DURATION: [number, number] = [0.5, 2]; // Seconds (faster animation)
 
 	private baseCanvas: HTMLCanvasElement;
 	private overlayCanvas: HTMLCanvasElement;

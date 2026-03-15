@@ -6,9 +6,50 @@ import { openGraph } from "spectre:globals";
 import Card from "../components/Card.astro";
 import Icon from "../components/Icon.astro";
 import Layout from "../layouts/Layout.astro";
+import {
+	getAllPosts as getSanityPosts,
+	type SanityPost,
+	type SanityTag,
+} from "../lib/sanity";
 
-const posts = await getCollection("posts", (post) => post.data.draft !== true);
-const tags = posts.flatMap((post) => post.data.tags.map((tag) => tag.id));
+// Tipo para tags no formato local
+interface LocalTag {
+	id: string;
+}
+
+// Buscar posts locais (MDX)
+const localPosts = await getCollection(
+	"posts",
+	(post) => post.data.draft !== true,
+);
+
+// Buscar posts do Sanity
+const sanityPosts = await getSanityPosts();
+
+// Converter posts do Sanity para formato compatível
+const formattedSanityPosts = (sanityPosts as SanityPost[]).map((post) => ({
+	id: post.slug?.current || post._id,
+	data: {
+		title: post.title,
+		description: post.excerpt || "",
+		createdAt: new Date(post.date),
+		tags:
+			post.tags?.map((tag) => ({ id: tag.slug?.current || tag.name })) || [],
+		draft: !post.published,
+	},
+	source: "sanity" as const,
+}));
+
+// Combinar posts locais com posts do Sanity
+const allPosts = [
+	...localPosts.map((post) => ({ ...post, source: "local" as const })),
+	...formattedSanityPosts,
+];
+
+// Extrair tags de todos os posts
+const tags = allPosts.flatMap((post) =>
+	post.data.tags.map((tag: LocalTag) => tag.id),
+);
 ---
 <Layout
   title={openGraph.blog.title || "Blog"}
@@ -17,7 +58,7 @@ const tags = posts.flatMap((post) => post.data.tags.map((tag) => tag.id));
 >
   <div class="layout-grid-left" slot="left">
     <Card class="flex-col-card">
-      <h2 class="no-mt">Filter</h2>
+      <h2 class="no-mt">Filtrar</h2>
       <ul class="tags-list">
         {Array.from(new Set(tags)).map((tag) => (
           <li>
@@ -37,22 +78,31 @@ const tags = posts.flatMap((post) => post.data.tags.map((tag) => tag.id));
 		<Card>
 			<div class="header-container">
 				<Icon type="lucide" name="rss" width={24} height={24} class='glow-icon' />
-				<h2>Latest Posts</h2>
+				<h2>Últimos Posts</h2>
 			</div>
 			<div class="content-container">
-				{posts.sort((a, b) => b.data.createdAt.getTime() - a.data.createdAt.getTime()).map((post) => (
-					<a href={`/blog/${post.id}`} class="post-container" data-tags={post.data.tags.map((tag) => tag.id).join(",")}>
+				{allPosts.sort((a, b) => b.data.createdAt.getTime() - a.data.createdAt.getTime()).map((post) => (
+					<a href={`/blog/${post.id}`} class="post-container" data-tags={post.data.tags.map((tag: LocalTag) => tag.id).join(",")}>
 						<div class="post-header">
 							<h3>{post.data.title}</h3>
 							<span class="post-date">{post.data.createdAt.toLocaleDateString()}</span>
 						</div>
 						<span>{post.data.description}</span>
+						{post.source === 'sanity' && <span class="post-source">📡 Sanity</span>}
 					</a>
 				))}
 			</div>
 		</Card>
   </div>
 </Layout>
+<style>
+  .post-source {
+    font-size: 0.75rem;
+    color: var(--accent-color);
+    margin-top: 0.5rem;
+    display: block;
+  }
+</style>
 <script>
   const tags = document.querySelectorAll<HTMLAnchorElement>('.blog-tag');
   const posts = document.querySelectorAll<HTMLAnchorElement>('.post-container');

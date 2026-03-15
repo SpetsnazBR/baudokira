@@ -12,11 +12,11 @@ const path = Astro.url.pathname;
     </li>
     <li class="nav-separator">/</li>
     <li>
-      <a href="/projects" class:list={{ active: path.startsWith('/projects') }}>Projects</a>
+      <a href="/projects" class:list={{ active: path.startsWith('/projects') }}>Projetos</a>
     </li>
     <li class="nav-separator">/</li>
     <li>
-      <input id="search" type="text" placeholder="Search (Ctrl+K)" />
+      <input id="search" type="text" placeholder="Buscar (Ctrl+K)" />
       <div id="search-results"></div>
     </li>
   </ul>
@@ -132,7 +132,7 @@ const path = Astro.url.pathname;
     }
 
     if (search.results.length === 0 && e.target.value.length > 0) {
-      results.innerHTML = '<p style="margin-top: 0;">No results found</p>';
+      results.innerHTML = '<p style="margin-top: 0;">Nenhum resultado encontrado</p>';
     } else {
       results.innerHTML = searchResultHtml;
     }
@@ -147,9 +147,9 @@ const path = Astro.url.pathname;
 
   const handleTabletChange = () => {
     if (window.matchMedia('(max-width: 640px)').matches) {
-      searchElement.placeholder = 'Search';
+      searchElement.placeholder = 'Buscar';
     } else {
-      searchElement.placeholder = 'Search (Ctrl+K)';
+      searchElement.placeholder = 'Buscar (Ctrl+K)';
     }
   }
 

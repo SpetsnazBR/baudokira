@@ -1,4 +1,4 @@
-import type { AstroIntegration } from "astro";
+import type { AstroIntegration, ViteUserConfig } from "astro";
 import { z } from "astro/zod";
 import { viteVirtualModulePluginBuilder } from "./utils/virtual-module-plugin-builder";
 
@@ -162,7 +162,11 @@ export default function integration(
 			"astro:config:setup": ({ updateConfig }) => {
 				updateConfig({
 					vite: {
-						plugins: [globals()],
+						plugins: [
+							globals() as unknown as NonNullable<
+								ViteUserConfig["plugins"]
+							>[number],
+						],
 					},
 				});
 			},

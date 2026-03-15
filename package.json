@@ -15,14 +15,19 @@
 	},
 	"dependencies": {
 		"@astrojs/mdx": "5.0.0",
-		"@astrojs/node": "10.0.0",
+		"@astrojs/node": "^10.0.1",
 		"@astrojs/sitemap": "3.7.1",
 		"@iconify-json/lucide": "^1.2.20",
 		"@iconify-json/simple-icons": "^1.2.18",
 		"@iconify/utils": "^2.2.1",
+		"@portabletext/to-html": "^5.0.2",
+		"@sanity/client": "^7.17.0",
+		"@sanity/image-url": "^2.0.3",
 		"@shikijs/themes": "^1.26.1",
-		"astro": "6.0.0",
-		"astro-expressive-code": "^0.38.3",
+		"astro": "^6.0.4",
+		"astro-expressive-code": "^0.41.7",
+		"sanity": "^5.16.0",
+		"sanity-plugin-markdown": "^8.0.5",
 		"sharp": "^0.33.5"
 	},
 	"devDependencies": {
