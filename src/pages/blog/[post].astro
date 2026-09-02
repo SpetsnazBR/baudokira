@@ -7,32 +7,20 @@ import { giscus } from "spectre:globals";
 import Card from "../../components/Card.astro";
 import ImageGlow from "../../components/ImageGlow.astro";
 import Layout from "../../layouts/Layout.astro";
-import { getPostBySlug, urlFor } from "../../lib/sanity";
+import { timeToRead } from "../../lib/reading-time";
 
 // Desativar prerender para permitir SSR
 export const prerender = false;
 
-/**
- * Estimates the time it takes to read a post in minutes
- */
-function timeToRead(content: string): number {
-	const numWords = (content || "")
-		.replace(/.*\[(.*?)\].*/gm, "$1")
-		.replace(/```.*?```/gms, "")
-		.split(/\s+/).length;
-
-	const numImages = content?.match(/!\[/g)?.length || 0;
-	const numCodeblocks = content?.match(/```/g)?.length || 0;
-
-	return (
-		Math.ceil(numWords / 200) +
-		Math.ceil(numImages / 6) +
-		Math.ceil(numCodeblocks / 3)
-	);
-}
-
 // Buscar o slug da URL
 const { post: postSlug } = Astro.params;
+
+// Buscar o post local correspondente ao slug
+const localPosts = await getCollection(
+	"posts",
+	(post) => post.data.draft !== true,
+);
+const matchedLocalPost = localPosts.find((p) => p.id === postSlug);
 
 // Preparar variáveis
 let title: string = "";
@@ -40,24 +28,14 @@ let description: string = "";
 let createdAt: Date = new Date();
 let updatedAt: Date | undefined;
 let tags: string[] = [];
-let imageUrl: string | undefined;
 let Content: any;
 let headings: any[] = [];
 let bodyContent: string = "";
-let isLocalPost = false;
 let localPostData: CollectionEntry<"posts"> | null = null;
 let found = false;
 
-// Primeiro, tentar buscar post local
-const localPosts = await getCollection(
-	"posts",
-	(post) => post.data.draft !== true,
-);
-const matchedLocalPost = localPosts.find((p) => p.id === postSlug);
-
 if (matchedLocalPost) {
 	found = true;
-	isLocalPost = true;
 	localPostData = matchedLocalPost;
 	title = matchedLocalPost.data.title;
 	description = matchedLocalPost.data.description;
@@ -69,22 +47,6 @@ if (matchedLocalPost) {
 	const rendered = await render(matchedLocalPost);
 	Content = rendered.Content;
 	headings = rendered.headings;
-} else {
-	// Tentar buscar post do Sanity
-	const sanityPost = await getPostBySlug(postSlug!);
-
-	if (sanityPost) {
-		found = true;
-		title = sanityPost.title;
-		description = sanityPost.excerpt || "";
-		createdAt = new Date(sanityPost.date);
-		updatedAt = undefined;
-		tags = sanityPost.tags?.map((tag: any) => tag.name) || [];
-		imageUrl = sanityPost.coverImage
-			? urlFor(sanityPost.coverImage).width(1200).url()
-			: undefined;
-		bodyContent = sanityPost.content || "";
-	}
 }
 
 // Se não encontrou em nenhum lugar, retornar 404
@@ -123,20 +85,14 @@ const readingTime = timeToRead(bodyContent);
 	<article slot="right" data-pagefind-body>
 		<Card>
 			<div class="article-header" id="_top" data-pagefind-ignore>
-				{isLocalPost && localPostData ? (
+				{localPostData && (
 					<ImageGlow
 						quality={100}
 						class="article-image"
 						src={localPostData.data.image}
 						alt={title}
 					/>
-				) : imageUrl ? (
-					<img
-						class="article-image sanity-image"
-						src={imageUrl}
-						alt={title}
-					/>
-				) : null}
+				)}
 				<div class="header">
 					<div>
 						<h1 class="no-mt article-h1">{title}</h1>
@@ -150,11 +106,7 @@ const readingTime = timeToRead(bodyContent);
 					</div>
 				</div>
 			</div>
-			{isLocalPost && Content ? (
-				<Content />
-			) : (
-				<div class="sanity-content" set:html={bodyContent} />
-			)}
+			{Content && <Content />}
 			<hr class="end-of-article" />
 			<a href="/blog" class="block-link" data-pagefind-ignore>← Voltar ao blog</a>
 		</Card>
@@ -238,51 +190,6 @@ const readingTime = timeToRead(bodyContent);
 
 	.comments * {
 		border-color: #353535 !important;
-	}
-
-	.sanity-image {
-		width: 100%;
-		height: auto;
-		border-radius: 0.5rem;
-		margin-bottom: 1rem;
-	}
-
-	.sanity-content {
-		line-height: 1.7;
-	}
-
-	.sanity-content h1,
-	.sanity-content h2,
-	.sanity-content h3,
-	.sanity-content h4,
-	.sanity-content h5,
-	.sanity-content h6 {
-		margin-top: 1.5em;
-		margin-bottom: 0.5em;
-	}
-
-	.sanity-content p {
-		margin-bottom: 1em;
-	}
-
-	.sanity-content pre {
-		background: #1e1e1e;
-		padding: 1rem;
-		border-radius: 0.5rem;
-		overflow-x: auto;
-		margin: 1em 0;
-	}
-
-	.sanity-content code {
-		font-family: monospace;
-		background: #2d2d2d;
-		padding: 0.2em 0.4em;
-		border-radius: 0.25rem;
-	}
-
-	.sanity-content pre code {
-		background: none;
-		padding: 0;
 	}
 
 	@media screen and (max-width: 640px) {

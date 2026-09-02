@@ -18,6 +18,9 @@ pnpm-debug.log*
 .env.local
 .env.production
 
+# local npm cache (contido no projeto)
+.npm/
+
 # macOS-specific files
 .DS_Store
 

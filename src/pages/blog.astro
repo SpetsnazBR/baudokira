@@ -6,11 +6,6 @@ import { openGraph } from "spectre:globals";
 import Card from "../components/Card.astro";
 import Icon from "../components/Icon.astro";
 import Layout from "../layouts/Layout.astro";
-import {
-	getAllPosts as getSanityPosts,
-	type SanityPost,
-	type SanityTag,
-} from "../lib/sanity";
 
 // Tipo para tags no formato local
 interface LocalTag {
@@ -18,33 +13,10 @@ interface LocalTag {
 }
 
 // Buscar posts locais (MDX)
-const localPosts = await getCollection(
+const allPosts = await getCollection(
 	"posts",
 	(post) => post.data.draft !== true,
 );
-
-// Buscar posts do Sanity
-const sanityPosts = await getSanityPosts();
-
-// Converter posts do Sanity para formato compatível
-const formattedSanityPosts = (sanityPosts as SanityPost[]).map((post) => ({
-	id: post.slug?.current || post._id,
-	data: {
-		title: post.title,
-		description: post.excerpt || "",
-		createdAt: new Date(post.date),
-		tags:
-			post.tags?.map((tag) => ({ id: tag.slug?.current || tag.name })) || [],
-		draft: !post.published,
-	},
-	source: "sanity" as const,
-}));
-
-// Combinar posts locais com posts do Sanity
-const allPosts = [
-	...localPosts.map((post) => ({ ...post, source: "local" as const })),
-	...formattedSanityPosts,
-];
 
 // Extrair tags de todos os posts
 const tags = allPosts.flatMap((post) =>
@@ -88,20 +60,12 @@ const tags = allPosts.flatMap((post) =>
 							<span class="post-date">{post.data.createdAt.toLocaleDateString()}</span>
 						</div>
 						<span>{post.data.description}</span>
-						{post.source === 'sanity' && <span class="post-source">📡 Sanity</span>}
 					</a>
 				))}
 			</div>
 		</Card>
   </div>
 </Layout>
-<style>
-  .post-source {
-    font-size: 0.75rem;
-    color: var(--accent-color);
-    margin-top: 0.5rem;
-    display: block;
-  }
 </style>
 <script>
   const tags = document.querySelectorAll<HTMLAnchorElement>('.blog-tag');

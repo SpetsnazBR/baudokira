@@ -2,7 +2,6 @@
 	"name": "spectre",
 	"type": "module",
 	"version": "1.0.2",
-	"packageManager": "pnpm@10.27.0",
 	"scripts": {
 		"dev": "astro dev",
 		"build": "astro build",
@@ -11,24 +10,22 @@
 		"astro": "astro",
 		"postbuild": "pagefind --site dist/client",
 		"lint": "biome check .",
-		"lint:fix": "biome check --write ."
+		"lint:fix": "biome check --write .",
+		"test": "node --test tests/",
+		"test:unit": "node --test tests/",
+		"test:security": "npm audit"
 	},
 	"dependencies": {
-		"@astrojs/mdx": "5.0.0",
-		"@astrojs/node": "^10.0.1",
-		"@astrojs/sitemap": "3.7.1",
+		"@astrojs/mdx": "^8.0.0",
+		"@astrojs/node": "^11.1.5",
+		"@astrojs/sitemap": "^3.7.4",
 		"@iconify-json/lucide": "^1.2.20",
 		"@iconify-json/simple-icons": "^1.2.18",
 		"@iconify/utils": "^2.2.1",
-		"@portabletext/to-html": "^5.0.2",
-		"@sanity/client": "^7.17.0",
-		"@sanity/image-url": "^2.0.3",
 		"@shikijs/themes": "^1.26.1",
-		"astro": "^6.0.4",
-		"astro-expressive-code": "^0.41.7",
-		"sanity": "^5.16.0",
-		"sanity-plugin-markdown": "^8.0.5",
-		"sharp": "^0.33.5"
+		"astro": "^7.2.10",
+		"astro-expressive-code": "^0.44.2",
+		"sharp": "^0.35.4"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.4.4",
@@ -36,6 +33,6 @@
 		"pagefind": "^1.3.0",
 		"shiki": "^1.26.1",
 		"typescript": "^5.9.2",
-		"vite": "^6.4.1"
+		"vite": "^7.3.6"
 	}
 }

@@ -8,9 +8,8 @@ import Card from "../components/Card.astro";
 import Icon from "../components/Icon.astro";
 import ImageGlow from "../components/ImageGlow.astro";
 import Layout from "../layouts/Layout.astro";
-import { getAllPosts as getSanityPosts, type SanityPost } from "../lib/sanity";
 
-const [localPosts, projects, about, workExperience, quickInfo, socials] =
+const [posts, projects, about, workExperience, quickInfo, socials] =
 	await Promise.all([
 		getCollection("posts", (post) => post.data.draft !== true),
 		getCollection("projects"),
@@ -19,26 +18,6 @@ const [localPosts, projects, about, workExperience, quickInfo, socials] =
 		getCollection("quickInfo"),
 		getCollection("socials"),
 	]);
-
-// Buscar posts do Sanity
-const sanityPosts = await getSanityPosts();
-
-// Converter posts do Sanity para formato compatível
-const formattedSanityPosts = (sanityPosts as SanityPost[]).map((post) => ({
-	id: post.slug?.current || post._id,
-	data: {
-		title: post.title,
-		description: post.excerpt || "",
-		createdAt: new Date(post.date),
-	},
-	source: "sanity" as const,
-}));
-
-// Combinar posts locais com posts do Sanity
-const posts = [
-	...localPosts.map((post) => ({ ...post, source: "local" as const })),
-	...formattedSanityPosts,
-];
 
 const { Content: About } = await render(about!);
 ---

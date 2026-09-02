@@ -2,7 +2,7 @@
 
 ![Baú do Kira](./images/README.png)
 
-Um blog pessoal minimalista inspirado em terminal, construído com Astro e integrado com Sanity CMS.
+Um blog pessoal minimalista inspirado em terminal, construído com [Astro](https://astro.build) e TypeScript.
 
 ## ✨ Funcionalidades
 
@@ -17,22 +17,14 @@ Um blog pessoal minimalista inspirado em terminal, construído com Astro e integ
 - 📦 **Content Collections** - Posts e projetos organizados
 - 🔒 **TypeScript** - Código type-safe
 
-## 🆕 Integração com Sanity CMS
-
-Este blog possui integração com [Sanity CMS](https://www.sanity.io/), permitindo:
-
-- ✍️ Criar e editar posts através de um painel administrativo
-- 🏷️ Gerenciamento de tags
-- 🖼️ Upload de imagens
-- 📄 Edição de conteúdo em Markdown
-- 🔄 Posts locais (MDX) e do Sanity funcionam juntos
-
 ## 🚀 Começando
 
 ### Pré-requisitos
 
-- Node.js 18+
-- npm ou pnpm
+- **Node.js 22.12+** (exigência do Astro 7)
+- **npm** (gerenciador de pacotes oficial do projeto)
+
+> O projeto **não** usa pnpm — a configuração npm está centralizada no arquivo `.npmrc` da raiz.
 
 ### Instalação
 
@@ -41,84 +33,47 @@ Este blog possui integração com [Sanity CMS](https://www.sanity.io/), permitin
 git clone https://github.com/SpetsnazBR/blog.git
 cd blog
 
-# Instalar dependências
+# Instalar dependências (node_modules fica contido no projeto)
 npm install
 
-# Configurar variáveis de ambiente
+# Configurar variáveis de ambiente (opcional, para Giscus)
 cp .env.example .env.local
 # Edite o .env.local com suas credenciais
 ```
 
-### Configurar Sanity CMS
+### Configuração npm (`.npmrc`)
 
-1. Crie uma conta em [sanity.io](https://www.sanity.io/)
-2. Crie um novo projeto e obtenha o Project ID
-3. Configure as variáveis no `.env.local`:
+O arquivo `.npmrc` na raiz garante que o **cache do npm fique contido no projeto** (`./.npm`), sem escrever em `~/.npm`:
 
-```env
-SANITY_STUDIO_PROJECT_ID=seu_project_id
-SANITY_STUDIO_DATASET=production
-SANITY_API_TOKEN=seu_token
-
-PUBLIC_SANITY_PROJECT_ID=seu_project_id
-PUBLIC_SANITY_DATASET=production
-PUBLIC_SANITY_API_VERSION=2024-01-01
+```ini
+cache=./.npm
+fund=false
 ```
-
-4. Inicie o Sanity Studio:
-
-```bash
-cd sanity
-npm install
-npm run dev
-```
-
-O Sanity Studio estará disponível em: http://localhost:3333
-
-### Executar o blog
-
-```bash
-# Desenvolvimento
-npm run dev
-
-# Build para produção
-npm run build
-
-# Iniciar servidor de produção
-npm run start
-```
-
-O blog estará disponível em: http://localhost:3334
 
 ## 📁 Estrutura do Projeto
 
 ```
-├── public/              # Arquivos estáticos
-├── sanity/              # Configuração do Sanity CMS
-│   ├── schemas/         # Schemas (posts, tags)
-│   └── sanity.config.ts # Configuração
+├── public/                # Arquivos estáticos (favicon, fontes, imagens OG)
+├── package/               # Integração Spectre (módulo virtual "spectre:globals")
+│   └── src/               # Código-fonte da integração (Zod + plugin Vite)
 ├── src/
-│   ├── components/      # Componentes Astro
-│   ├── content/         # Conteúdo local (MDX)
-│   │   ├── other/       # Página sobre
-│   │   └── projects/    # Projetos
-│   ├── layouts/         # Layouts
-│   ├── lib/             # Utilitários (cliente Sanity)
-│   ├── pages/           # Páginas e rotas
-│   ├── scripts/         # Scripts client-side
-│   └── styles/          # Estilos CSS
-└── package.json
+│   ├── components/        # Componentes Astro (Card, Icon, Navbar, ...)
+│   ├── content/           # Conteúdo local (MDX/JSON)
+│   │   ├── other/         # Página sobre
+│   │   └── projects/      # Projetos
+│   ├── layouts/           # Layout principal
+│   ├── lib/               # Utilitários (ex.: reading-time.ts)
+│   ├── pages/             # Páginas e rotas
+│   ├── scripts/           # Scripts client-side
+│   └── styles/            # Estilos CSS
+├── tests/                 # Testes unitários (node:test)
+├── .npmrc                 # Configuração npm (cache contido no projeto)
+├── astro.config.ts        # Configuração do Astro
+├── package.json
+└── tsconfig.json
 ```
 
 ## 📝 Criando Posts
-
-### Via Sanity CMS (recomendado)
-
-1. Acesse o Sanity Studio (http://localhost:3333)
-2. Clique em "Posts" > "Create new"
-3. Preencha título, slug, conteúdo e publique
-
-### Via arquivos MDX (local)
 
 Crie um arquivo em `src/content/posts/` seguindo o formato:
 
@@ -135,16 +90,135 @@ draft: false
 Conteúdo do post aqui...
 ```
 
+## 🧪 Testes
+
+O projeto usa o **test runner nativo do Node.js** (`node:test`) — sem dependências extras.
+
+| Comando | Descrição |
+|---------|-----------|
+| `npm test` | Executa todos os testes unitários |
+| `npm run test:unit` | Alias para `npm test` |
+| `npm run test:security` | Auditoria de segurança das dependências (`npm audit`) |
+
+**Suítes existentes (`tests/`):**
+- `reading-time.test.ts` — função `timeToRead` (estimativa de tempo de leitura)
+- `sanity-removed.test.ts` — testes de regressão garantindo que o Sanity CMS não volte ao projeto
+
 ## 🛠️ Scripts Disponíveis
+
+### Scripts npm
 
 | Comando | Descrição |
 |---------|-----------|
 | `npm run dev` | Inicia servidor de desenvolvimento |
 | `npm run build` | Build para produção |
-| `npm run start` | Inicia servidor de produção |
+| `npm run start` | Inicia servidor de produção (SSR) |
 | `npm run preview` | Preview do build |
 | `npm run lint` | Verifica código com Biome |
 | `npm run lint:fix` | Corrige problemas automaticamente |
+| `npm test` | Executa testes unitários |
+| `npm run test:security` | Auditoria de segurança (`npm audit`) |
+
+### Scripts Shell (.sh)
+
+O projeto inclui scripts shell para facilitar o gerenciamento do servidor:
+
+#### `run-servers.sh` - Script principal para executar o servidor
+
+Este script inicia o servidor do Astro Blog.
+
+**Uso básico:**
+```bash
+# Executar com todas as verificações
+./run-servers.sh
+```
+
+**Opções disponíveis:**
+```bash
+# Mostrar ajuda
+./run-servers.sh --help
+
+# Mostrar versão
+./run-servers.sh --version
+
+# Executar sem verificar dependências
+./run-servers.sh --no-check
+
+# Executar sem verificar arquivo .env.local
+./run-servers.sh --no-env
+```
+
+**Funcionalidades do script:**
+- ✅ Verifica se Node.js e npm estão instalados
+- ✅ Verifica dependências do projeto
+- ✅ Oferece instalação automática de dependências se necessário
+- ✅ Verifica e cria arquivo `.env.local` se não existir
+- ✅ Inicia servidor Astro Blog na porta 3334
+- ✅ Gerencia processos e limpeza automática ao encerrar
+- ✅ Interface colorida com timestamps
+- ✅ Tratamento de erros e sinais de sistema
+
+**Servidor iniciado:**
+- Astro Blog: http://localhost:3334
+
+#### `test-servers.sh` - Script de teste
+
+Este script testa as funcionalidades básicas do `run-servers.sh` sem executar o servidor.
+
+**Uso:**
+```bash
+# Executar testes
+./test-servers.sh
+```
+
+**Testes realizados:**
+- ✅ Verificação de sintaxe do script
+- ✅ Teste da opção de ajuda (`--help`)
+- ✅ Teste da opção de versão (`--version`)
+- ✅ Tratamento de argumentos inválidos
+- ✅ Verificação de permissões de execução
+- ✅ Verificação da estrutura do projeto
+- ✅ Verificação de arquivos de exemplo
+
+**Configuração inicial:**
+```bash
+# Tornar os scripts executáveis (se necessário)
+chmod +x run-servers.sh test-servers.sh
+
+# Executar teste primeiro
+./test-servers.sh
+
+# Se tudo estiver OK, executar o servidor
+./run-servers.sh
+```
+
+## 🧪 Fluxo de Trabalho Recomendado
+
+1. **Configuração inicial:**
+   ```bash
+   git clone https://github.com/SpetsnazBR/blog.git
+   cd blog
+   npm install
+   cp .env.example .env.local
+   # Editar .env.local com suas credenciais
+   ```
+
+2. **Testar scripts:**
+   ```bash
+   chmod +x run-servers.sh test-servers.sh
+   ./test-servers.sh
+   npm test
+   ```
+
+3. **Iniciar desenvolvimento:**
+   ```bash
+   ./run-servers.sh
+   # Ou para desenvolvimento rápido:
+   ./run-servers.sh --no-check --no-env
+   ```
+
+4. **Acessar o servidor:**
+   - Blog: http://localhost:3334
 
 ## 🙏 Créditos
 
