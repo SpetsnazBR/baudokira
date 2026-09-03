@@ -1,0 +1,7 @@
+# runtime data (banco e uploads) — NUNCA commitados
+data/
+uploads/
+node_modules/
+
+# segredos locais — NUNCA commitados
+.env

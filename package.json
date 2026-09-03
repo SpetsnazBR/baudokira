@@ -13,7 +13,8 @@
 		"lint:fix": "biome check --write .",
 		"test": "node --test tests/",
 		"test:unit": "node --test tests/",
-		"test:security": "npm audit"
+		"test:security": "npm audit",
+		"cms": "node cms/server.mjs"
 	},
 	"dependencies": {
 		"@astrojs/mdx": "^8.0.0",

@@ -1,0 +1,13 @@
+{
+	"name": "baudokira-cms",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"description": "Sistema local de publicacao do blog Baú do Kira (gera posts .md para o Astro)",
+	"scripts": {
+		"start": "node server.mjs"
+	},
+	"engines": {
+		"node": ">=22.5.0"
+	}
+}
