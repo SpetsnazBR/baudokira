@@ -33,7 +33,6 @@ const config = defineConfig({
 					title: 'Projetos',
 				},
 			},
-			giscus: false,
 		}),
 	],
 });

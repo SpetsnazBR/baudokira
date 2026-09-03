@@ -27,7 +27,7 @@ fi
 
 # Teste 3: Verificar versão
 echo "3. Verificando opção de versão..."
-./run-servers.sh --version | grep -q "v2.0.0"
+./run-servers.sh --version | grep -q "v2.1.0"
 if [ $? -eq 0 ]; then
     echo "   ✓ Versão funciona"
 else
@@ -67,12 +67,14 @@ else
     echo "   ✗ Arquivo 'astro.config.ts' não encontrado"
 fi
 
-# Teste 7: Verificar arquivos de exemplo
-echo "7. Verificando arquivos de exemplo..."
-if [ -f ".env.example" ]; then
-    echo "   ✓ Arquivo '.env.example' encontrado"
+# Teste 7: Verificar permissões de execução do test-servers
+echo "7. Verificando permissões do script..."
+if [ -x "test-servers.sh" ]; then
+    echo "   ✓ Script é executável"
 else
-    echo "   ✗ Arquivo '.env.example' não encontrado"
+    echo "   ✗ Script não é executável"
+    echo "   Executando: chmod +x test-servers.sh"
+    chmod +x test-servers.sh
 fi
 
 echo

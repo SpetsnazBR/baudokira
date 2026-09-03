@@ -15,7 +15,6 @@ show_help() {
     echo "  -h, --help     Mostra esta mensagem de ajuda"
     echo "  -v, --version  Mostra a versão do script"
     echo "  --no-check     Executa sem verificar dependências"
-    echo "  --no-env       Executa sem verificar arquivo .env.local"
     echo ""
     echo "Exemplos:"
     echo "  $0              # Executa com todas as verificações"
@@ -26,14 +25,13 @@ show_help() {
 
 # Função de versão
 show_version() {
-    echo "run-servers.sh v2.0.0"
+    echo "run-servers.sh v2.1.0"
     echo "Script para executar o servidor do Baú do Kira"
     exit 0
 }
 
 # Processar argumentos
 NO_CHECK=false
-NO_ENV=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -45,10 +43,6 @@ while [[ $# -gt 0 ]]; do
             ;;
         --no-check)
             NO_CHECK=true
-            shift
-            ;;
-        --no-env)
-            NO_ENV=true
             shift
             ;;
         *)
@@ -134,21 +128,6 @@ if [ "$NO_CHECK" = false ]; then
     fi
 else
     print_warning "Pulando verificação de dependências (--no-check)"
-fi
-
-# Verificar arquivo de ambiente (a menos que --no-env seja usado)
-if [ "$NO_ENV" = false ]; then
-    if [ ! -f ".env.local" ] && [ -f ".env.example" ]; then
-        print_warning "Arquivo .env.local não encontrado."
-        read -p "Deseja copiar .env.example para .env.local? (s/n): " -n 1 -r
-        echo
-        if [[ $REPLY =~ ^[Ss]$ ]]; then
-            cp .env.example .env.local
-            print_success "Arquivo .env.local criado. Por favor, configure as variáveis de ambiente."
-        fi
-    fi
-else
-    print_warning "Pulando verificação de ambiente (--no-env)"
 fi
 
 # Iniciar servidor Astro Blog

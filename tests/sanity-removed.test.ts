@@ -69,14 +69,13 @@ describe("Remoção do Sanity CMS", () => {
 		}
 	});
 
-	test("os arquivos .env não devem conter variáveis SANITY", () => {
+	test("os arquivos .env foram removidos (sem variáveis antigas)", () => {
 		for (const file of [".env.example", ".env.local"]) {
 			const path = join(ROOT, file);
-			if (!existsSync(path)) continue;
-			const content = readFileSync(path, "utf8");
-			assert.ok(
-				!/SANITY/i.test(content),
-				`Variável SANITY ainda presente em ${file}`,
+			assert.equal(
+				existsSync(path),
+				false,
+				`Arquivo ${file} ainda existe (projeto não usa variáveis de ambiente)`,
 			);
 		}
 	});

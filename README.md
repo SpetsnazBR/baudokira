@@ -10,7 +10,6 @@ Um blog pessoal minimalista inspirado em terminal, construído com [Astro](https
 - 📱 **Responsivo** - Adaptável a todos os tamanhos de tela
 - ♿ **Acessível** - Navegação completa por teclado e compatível com leitores de tela
 - 🔍 **Busca integrada** - Powered by [Pagefind](https://pagefind.app)
-- 💬 **Comentários** - Sistema de comentários com [Giscus](https://giscus.app) (opcional)
 - 📝 **Markdown/MDX** - Suporte completo para escrita de posts
 - 🎨 **Tema escuro** - Design minimalista em modo escuro
 - 🗺️ **Sitemap automático** - SEO otimizado
@@ -35,10 +34,6 @@ cd blog
 
 # Instalar dependências (node_modules fica contido no projeto)
 npm install
-
-# Configurar variáveis de ambiente (opcional, para Giscus)
-cp .env.example .env.local
-# Edite o .env.local com suas credenciais
 ```
 
 ### Configuração npm (`.npmrc`)
@@ -143,16 +138,12 @@ Este script inicia o servidor do Astro Blog.
 
 # Executar sem verificar dependências
 ./run-servers.sh --no-check
-
-# Executar sem verificar arquivo .env.local
-./run-servers.sh --no-env
 ```
 
 **Funcionalidades do script:**
 - ✅ Verifica se Node.js e npm estão instalados
 - ✅ Verifica dependências do projeto
 - ✅ Oferece instalação automática de dependências se necessário
-- ✅ Verifica e cria arquivo `.env.local` se não existir
 - ✅ Inicia servidor Astro Blog na porta 3334
 - ✅ Gerencia processos e limpeza automática ao encerrar
 - ✅ Interface colorida com timestamps
@@ -178,7 +169,7 @@ Este script testa as funcionalidades básicas do `run-servers.sh` sem executar o
 - ✅ Tratamento de argumentos inválidos
 - ✅ Verificação de permissões de execução
 - ✅ Verificação da estrutura do projeto
-- ✅ Verificação de arquivos de exemplo
+- ✅ Verificação de permissões do script de teste
 
 **Configuração inicial:**
 ```bash
@@ -199,8 +190,6 @@ chmod +x run-servers.sh test-servers.sh
    git clone https://github.com/SpetsnazBR/blog.git
    cd blog
    npm install
-   cp .env.example .env.local
-   # Editar .env.local com suas credenciais
    ```
 
 2. **Testar scripts:**
@@ -214,7 +203,7 @@ chmod +x run-servers.sh test-servers.sh
    ```bash
    ./run-servers.sh
    # Ou para desenvolvimento rápido:
-   ./run-servers.sh --no-check --no-env
+   ./run-servers.sh --no-check
    ```
 
 4. **Acessar o servidor:**
