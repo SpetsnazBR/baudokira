@@ -111,9 +111,9 @@ O projeto usa o **test runner nativo do Node.js** (`node:test`) — sem dependê
 | Comando | Descrição |
 |---------|-----------|
 | `npm run dev` | Inicia servidor de desenvolvimento |
-| `npm run build` | Build para produção |
-| `npm run start` | Inicia servidor de produção (SSR) |
-| `npm run preview` | Preview do build |
+| `npm run build` | Build estático para produção |
+| `npm run start` | Preview do build estático (alias de `preview`) |
+| `npm run preview` | Preview do build estático |
 | `npm run lint` | Verifica código com Biome |
 | `npm run lint:fix` | Corrige problemas automaticamente |
 | `npm test` | Executa testes unitários |
@@ -219,6 +219,25 @@ chmod +x run-servers.sh test-servers.sh
 
 4. **Acessar o servidor:**
    - Blog: http://localhost:3334
+
+## 🚀 Deploy (GitHub Pages)
+
+O site é **100% estático** (sem servidor/adapter Node) e publica automaticamente via **GitHub Actions** a cada push na branch `master`.
+
+### Configuração única (no GitHub)
+
+1. Vá em **Settings → Pages** do repositório
+2. Em **Build and deployment → Source**, selecione **"GitHub Actions"**
+3. (Opcional) Em **Custom domain**, adicione seu domínio (ex.: `spectre.lou.gg`) — o workflow gera os arquivos para servir na raiz
+4. O workflow `.github/workflows/deploy.yml` roda `npm ci` + `npm run build` e publica `dist/`
+
+### Fluxo de publicação
+
+```bash
+git push origin master   # → build + deploy automático
+```
+
+> **Nota:** o `astro.config.ts` define `site: 'https://spectre.lou.gg'`. Se você publicar sem domínio customizado (na URL `https://SEU_USUARIO.github.io/blog/`), adicione `base: '/blog/'` no `astro.config.ts` para os assets funcionarem corretamente.
 
 ## 🙏 Créditos
 

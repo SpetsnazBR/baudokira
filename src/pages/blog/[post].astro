@@ -1,7 +1,6 @@
 ---
 import "../../styles/article.css";
 
-import type { CollectionEntry } from "astro:content";
 import { getCollection, render } from "astro:content";
 import { giscus } from "spectre:globals";
 import Card from "../../components/Card.astro";
@@ -9,51 +8,28 @@ import ImageGlow from "../../components/ImageGlow.astro";
 import Layout from "../../layouts/Layout.astro";
 import { timeToRead } from "../../lib/reading-time";
 
-// Desativar prerender para permitir SSR
-export const prerender = false;
+// Gera páginas estáticas para todos os posts publicados
+export async function getStaticPaths() {
+	const posts = await getCollection(
+		"posts",
+		(post) => post.data.draft !== true,
+	);
 
-// Buscar o slug da URL
-const { post: postSlug } = Astro.params;
-
-// Buscar o post local correspondente ao slug
-const localPosts = await getCollection(
-	"posts",
-	(post) => post.data.draft !== true,
-);
-const matchedLocalPost = localPosts.find((p) => p.id === postSlug);
-
-// Preparar variáveis
-let title: string = "";
-let description: string = "";
-let createdAt: Date = new Date();
-let updatedAt: Date | undefined;
-let tags: string[] = [];
-let Content: any;
-let headings: any[] = [];
-let bodyContent: string = "";
-let localPostData: CollectionEntry<"posts"> | null = null;
-let found = false;
-
-if (matchedLocalPost) {
-	found = true;
-	localPostData = matchedLocalPost;
-	title = matchedLocalPost.data.title;
-	description = matchedLocalPost.data.description;
-	createdAt = matchedLocalPost.data.createdAt;
-	updatedAt = matchedLocalPost.data.updatedAt;
-	tags = matchedLocalPost.data.tags.map((tag) => tag.id);
-	bodyContent = matchedLocalPost.body || "";
-
-	const rendered = await render(matchedLocalPost);
-	Content = rendered.Content;
-	headings = rendered.headings;
+	return posts.map((post) => ({
+		params: { post: post.id },
+		props: { post },
+	}));
 }
 
-// Se não encontrou em nenhum lugar, retornar 404
-if (!found) {
-	return Astro.redirect("/404");
-}
+const { post } = Astro.props;
 
+const { Content, headings } = await render(post);
+const title = post.data.title;
+const description = post.data.description;
+const createdAt = post.data.createdAt;
+const updatedAt = post.data.updatedAt;
+const tags = post.data.tags.map((tag) => tag.id);
+const bodyContent = post.body || "";
 const readingTime = timeToRead(bodyContent);
 ---
 
@@ -85,14 +61,12 @@ const readingTime = timeToRead(bodyContent);
 	<article slot="right" data-pagefind-body>
 		<Card>
 			<div class="article-header" id="_top" data-pagefind-ignore>
-				{localPostData && (
-					<ImageGlow
-						quality={100}
-						class="article-image"
-						src={localPostData.data.image}
-						alt={title}
-					/>
-				)}
+				<ImageGlow
+					quality={100}
+					class="article-image"
+					src={post.data.image}
+					alt={title}
+				/>
 				<div class="header">
 					<div>
 						<h1 class="no-mt article-h1">{title}</h1>
@@ -106,7 +80,7 @@ const readingTime = timeToRead(bodyContent);
 					</div>
 				</div>
 			</div>
-			{Content && <Content />}
+			<Content />
 			<hr class="end-of-article" />
 			<a href="/blog" class="block-link" data-pagefind-ignore>← Voltar ao blog</a>
 		</Card>
@@ -129,7 +103,7 @@ const readingTime = timeToRead(bodyContent);
 							data-emit-metadata={giscus.emitMetadata === true ? "1" : "0"}
 							data-input-position={giscus.commentsInput}
 							data-theme={
-								giscus.theme || "https://spectre.lou.gg/styles/giscus"
+								giscus.theme || "https://spectre.lou.gg/styles/giscus.css"
 							}
 							data-lang={giscus.lang}
 							data-loading="lazy"
