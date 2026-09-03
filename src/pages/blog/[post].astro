@@ -30,6 +30,7 @@ const updatedAt = post.data.updatedAt;
 const tags = post.data.tags.map((tag) => tag.id);
 const bodyContent = post.body || "";
 const readingTime = timeToRead(bodyContent);
+const base = import.meta.env.BASE_URL;
 ---
 
 <Layout
@@ -81,7 +82,7 @@ const readingTime = timeToRead(bodyContent);
 			</div>
 			<Content />
 			<hr class="end-of-article" />
-			<a href="/blog" class="block-link" data-pagefind-ignore>← Voltar ao blog</a>
+			<a href={`${base}blog`} class="block-link" data-pagefind-ignore>← Voltar ao blog</a>
 		</Card>
 	</article>
 </Layout>

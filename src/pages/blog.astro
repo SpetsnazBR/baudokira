@@ -22,6 +22,7 @@ const allPosts = await getCollection(
 const tags = allPosts.flatMap((post) =>
 	post.data.tags.map((tag: LocalTag) => tag.id),
 );
+const base = import.meta.env.BASE_URL;
 ---
 <Layout
   title={openGraph.blog.title || "Blog"}
@@ -36,7 +37,7 @@ const tags = allPosts.flatMap((post) =>
           <li>
             <a
               class="blog-tag"
-              href="/blog"
+              href={`${base}blog`}
               data-tag={tag}
             >
               {tag}
@@ -54,7 +55,7 @@ const tags = allPosts.flatMap((post) =>
 			</div>
 			<div class="content-container">
 				{allPosts.sort((a, b) => b.data.createdAt.getTime() - a.data.createdAt.getTime()).map((post) => (
-					<a href={`/blog/${post.id}`} class="post-container" data-tags={post.data.tags.map((tag: LocalTag) => tag.id).join(",")}>
+					<a href={`${base}blog/${post.id}`} class="post-container" data-tags={post.data.tags.map((tag: LocalTag) => tag.id).join(",")}>
 						<div class="post-header">
 							<h3>{post.data.title}</h3>
 							<span class="post-date">{post.data.createdAt.toLocaleDateString()}</span>

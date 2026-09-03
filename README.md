@@ -29,7 +29,7 @@ Um blog pessoal minimalista inspirado em terminal, construído com [Astro](https
 
 ```bash
 # Clonar o repositório
-git clone https://github.com/SpetsnazBR/blog.git
+git clone https://github.com/SpetsnazBR/baudokira.git
 cd blog
 
 # Instalar dependências (node_modules fica contido no projeto)
@@ -187,7 +187,7 @@ chmod +x run-servers.sh test-servers.sh
 
 1. **Configuração inicial:**
    ```bash
-   git clone https://github.com/SpetsnazBR/blog.git
+   git clone https://github.com/SpetsnazBR/baudokira.git
    cd blog
    npm install
    ```
@@ -217,8 +217,10 @@ O site é **100% estático** (sem servidor/adapter Node) e publica automaticamen
 
 1. Vá em **Settings → Pages** do repositório
 2. Em **Build and deployment → Source**, selecione **"GitHub Actions"**
-3. (Opcional) Em **Custom domain**, adicione seu domínio (ex.: `spectre.lou.gg`) — o workflow gera os arquivos para servir na raiz
+3. (Opcional) Em **Custom domain**, adicione seu domínio — se usar um domínio customizado, remova `base: '/baudokira/'` do `astro.config.ts` para servir na raiz
 4. O workflow `.github/workflows/deploy.yml` roda `npm ci` + `npm run build` e publica `dist/`
+
+> **Configuração atual:** `site: 'https://spetsnazbr.github.io/baudokira'` + `base: '/baudokira/'` (publicação na URL padrão do projeto, sem domínio customizado).
 
 ### Fluxo de publicação
 
@@ -226,7 +228,6 @@ O site é **100% estático** (sem servidor/adapter Node) e publica automaticamen
 git push origin master   # → build + deploy automático
 ```
 
-> **Nota:** o `astro.config.ts` define `site: 'https://spectre.lou.gg'`. Se você publicar sem domínio customizado (na URL `https://SEU_USUARIO.github.io/blog/`), adicione `base: '/blog/'` no `astro.config.ts` para os assets funcionarem corretamente.
 
 ## 🙏 Créditos
 

@@ -7,7 +7,8 @@ import { spectreDark } from './src/ec-theme';
 
 // https://astro.build/config
 const config = defineConfig({
-	site: 'https://spectre.lou.gg',
+	site: 'https://spetsnazbr.github.io/baudokira',
+	base: '/baudokira/',
 	output: 'static',
 	server: {
 		port: 3334,
