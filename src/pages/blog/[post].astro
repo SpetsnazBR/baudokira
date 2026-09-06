@@ -6,6 +6,7 @@ import Card from "../../components/Card.astro";
 import ImageGlow from "../../components/ImageGlow.astro";
 import Layout from "../../layouts/Layout.astro";
 import { timeToRead } from "../../lib/reading-time";
+import { base } from "../../lib/site";
 
 // Gera páginas estáticas para todos os posts publicados
 export async function getStaticPaths() {
@@ -30,7 +31,6 @@ const updatedAt = post.data.updatedAt;
 const tags = post.data.tags.map((tag) => tag.id);
 const bodyContent = post.body || "";
 const readingTime = timeToRead(bodyContent);
-const base = import.meta.env.BASE_URL;
 ---
 
 <Layout

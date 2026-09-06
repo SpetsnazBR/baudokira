@@ -6,6 +6,7 @@ import { name, themeColor, twitterHandle } from "spectre:globals";
 import Background from "../components/Background.astro";
 import LayoutGrid from "../components/LayoutGrid.astro";
 import Navbar from "../components/Navbar.astro";
+import { base } from "../lib/site";
 
 interface Props {
 	title: string;
@@ -19,8 +20,6 @@ interface Props {
 }
 
 const { title, description, image, pagefindIgnore, article } = Astro.props;
-
-const base = import.meta.env.BASE_URL;
 
 // URL absoluta da imagem Open Graph (fallback para /img/og.png)
 const ogImage = image

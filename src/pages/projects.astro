@@ -6,9 +6,9 @@ import { openGraph } from "spectre:globals";
 import Card from "../components/Card.astro";
 import Icon from "../components/Icon.astro";
 import Layout from "../layouts/Layout.astro";
+import { base } from "../lib/site";
 
 const projects = await getCollection("projects");
-const base = import.meta.env.BASE_URL;
 ---
 <Layout
 	title={openGraph.projects.title || "Projetos"}

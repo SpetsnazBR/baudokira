@@ -6,6 +6,7 @@ import { openGraph } from "spectre:globals";
 import Card from "../components/Card.astro";
 import Icon from "../components/Icon.astro";
 import Layout from "../layouts/Layout.astro";
+import { base } from "../lib/site";
 
 // Tipo para tags no formato local
 interface LocalTag {
@@ -22,7 +23,6 @@ const allPosts = await getCollection(
 const tags = allPosts.flatMap((post) =>
 	post.data.tags.map((tag: LocalTag) => tag.id),
 );
-const base = import.meta.env.BASE_URL;
 ---
 <Layout
   title={openGraph.blog.title || "Blog"}
