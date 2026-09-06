@@ -61,13 +61,12 @@ export function slugExists(slug, exceptSlug = null) {
 	return Boolean(db.prepare("SELECT 1 FROM posts WHERE slug = ?").get(slug));
 }
 
-export function createPost(data) {
-	db.prepare(
-		`INSERT INTO posts
-			(slug, title, description, created_at, updated_at, tags, draft, cover, content)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-	).run(
-		data.slug,
+// Colunas de dados de um post (na ordem do schema; slug e separado)
+const POST_COLS = ["title", "description", "created_at", "updated_at", "tags", "draft", "cover", "content"];
+
+// Parametros posicionais na ordem de POST_COLS (compartilhado por INSERT/UPDATE)
+function postParams(data) {
+	return [
 		data.title,
 		data.description,
 		data.createdAt,
@@ -76,28 +75,22 @@ export function createPost(data) {
 		data.draft ? 1 : 0,
 		data.cover || null,
 		data.content || "",
-	);
+	];
+}
+
+export function createPost(data) {
+	db.prepare(
+		`INSERT INTO posts (slug, ${POST_COLS.join(", ")})
+		 VALUES (?, ${POST_COLS.map(() => "?").join(", ")})`,
+	).run(data.slug, ...postParams(data));
 	return getPost(data.slug);
 }
 
 export function updatePost(slug, data) {
 	db.prepare(
-		`UPDATE posts
-		   SET slug = ?, title = ?, description = ?, created_at = ?, updated_at = ?,
-		       tags = ?, draft = ?, cover = ?, content = ?
+		`UPDATE posts SET slug = ?, ${POST_COLS.map((c) => `${c} = ?`).join(", ")}
 		 WHERE slug = ?`,
-	).run(
-		data.slug,
-		data.title,
-		data.description,
-		data.createdAt,
-		data.updatedAt || null,
-		JSON.stringify(data.tags || []),
-		data.draft ? 1 : 0,
-		data.cover || null,
-		data.content || "",
-		slug,
-	);
+	).run(data.slug, ...postParams(data), slug);
 	return getPost(data.slug);
 }
 

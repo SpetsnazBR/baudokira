@@ -9,6 +9,13 @@ export function slugify(input) {
 		.slice(0, 80);
 }
 
+// Normaliza uma lista de tags: slugifica, remove vazios e duplicados
+export function normalizeTags(raw) {
+	return Array.isArray(raw)
+		? [...new Set(raw.map((t) => slugify(String(t))).filter(Boolean))]
+		: [];
+}
+
 // Data/hora local para o frontmatter (formato aceito por z.coerce.date)
 // Ex.: 2026-09-02T14:30:00-03:00
 export function toIsoLocal(dateStr, timeStr) {

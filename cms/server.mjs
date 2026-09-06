@@ -6,7 +6,7 @@ import { ASSETS_DIR, CMS_DIR, DATA_DIR, env } from "./lib/config.mjs";
 import * as db from "./lib/db.mjs";
 import * as content from "./lib/content.mjs";
 import * as git from "./lib/git.mjs";
-import { slugify, toIsoLocal } from "./lib/slug.mjs";
+import { normalizeTags, slugify, toIsoLocal } from "./lib/slug.mjs";
 
 // Usado apenas em /api/assets (imagens de src/content/assets/)
 const MIME = {
@@ -60,6 +60,11 @@ function readBody(req) {
 	});
 }
 
+
+// Le e faz parse do corpo JSON (com limite de tamanho)
+async function readJson(req) {
+	return JSON.parse((await readBody(req)).toString("utf8") || "{}");
+}
 
 // ---- Controle de acesso / proteções ─────────────────────────────
 
@@ -130,9 +135,7 @@ function parsePostPayload(body, { isNew, currentSlug = null }) {
 	slug = slugify(slug || title);
 	if (!slug) throw new Error("Nao foi possivel gerar um slug valido.");
 
-	const tags = Array.isArray(body.tags)
-		? [...new Set(body.tags.map((t) => slugify(String(t))).filter(Boolean))]
-		: [];
+	const tags = normalizeTags(body.tags);
 
 	const draft = body.draft !== false;
 
@@ -241,7 +244,7 @@ async function handle(req, res, url) {
 
 	// POST /api/posts (criar)
 	if (req.method === "POST" && url.pathname === "/api/posts") {
-		const raw = JSON.parse((await readBody(req)).toString("utf8") || "{}");
+		const raw = await readJson(req);
 		const data = parsePostPayload(raw, { isNew: true });
 		const addedTags = content.syncTags(data.tags);
 		content.writePostFile(data.slug, content.buildPostMarkdown(data));
@@ -251,7 +254,7 @@ async function handle(req, res, url) {
 
 	// POST /api/images (upload para assets, retorna trecho markdown)
 	if (req.method === "POST" && url.pathname === "/api/images") {
-		const raw = JSON.parse((await readBody(req)).toString("utf8") || "{}");
+		const raw = await readJson(req);
 		if (!raw.data || typeof raw.data !== "string") {
 			return sendError(res, 400, "Envie { data: '<data-url base64>', alt: 'texto' }.");
 		}
@@ -290,7 +293,7 @@ return send(res, 200, { post });
 if (req.method === "PUT") {
 	const existing = db.getPost(slug);
 	if (!existing) return sendError(res, 404, "Post nao encontrado.");
-	const raw = JSON.parse((await readBody(req)).toString("utf8") || "{}");
+	const raw = await readJson(req);
 	const data = parsePostPayload(raw, { isNew: false, currentSlug: slug });
 	const replacedCover = typeof raw.coverData === "string" && raw.coverData.length > 0;
 
