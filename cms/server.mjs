@@ -1,6 +1,6 @@
 import { createServer } from "node:http";
-import { readFileSync } from "node:fs";
-import { basename, extname, join } from "node:path";
+import { readFileSync, realpathSync } from "node:fs";
+import { basename, extname, join, sep } from "node:path";
 import { timingSafeEqual } from "node:crypto";
 import { ASSETS_DIR, CMS_DIR, DATA_DIR, env } from "./lib/config.mjs";
 import * as db from "./lib/db.mjs";
@@ -21,12 +21,19 @@ const MIME = {
 const MAX_BODY = 20 * 1024 * 1024; // 20 MB
 
 // ---- Helpers HTTP ----
+const SECURITY_HEADERS = {
+	"X-Content-Type-Options": "nosniff",
+	"X-Frame-Options": "DENY",
+	"Referrer-Policy": "no-referrer",
+}
+
 function send(res, status, body, type = "application/json; charset=utf-8") {
 	const payload = typeof body === "string" ? body : JSON.stringify(body);
 	res.writeHead(status, {
 		"Content-Type": type,
 		"Content-Length": Buffer.byteLength(payload),
 		"Cache-Control": "no-store",
+		...SECURITY_HEADERS,
 	});
 	res.end(payload);
 }
@@ -69,7 +76,7 @@ function authOk(req) {
 	return safeEqual(req.headers.authorization || "", `Bearer ${env.token}`);
 }
 
-// DNS rebinding / CSRF via browser: rejeita origens estranhas
+// DNS rebinding / CSRF via browser: aceita SOMENTE origem local na MESMA porta
 const ALLOWED_ORIGIN_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]", "::1"]);
 function originAllowed(req) {
 	const origin = req.headers.origin;
@@ -77,7 +84,8 @@ function originAllowed(req) {
 	try {
 		const u = new URL(origin);
 		if (!ALLOWED_ORIGIN_HOSTS.has(u.hostname)) return false;
-		if (u.port && u.port !== String(env.port)) return false;
+		// exige porta explícita igual à do servidor (defaults 80/443 NÃO passam)
+		if (!u.port || u.port !== String(env.port)) return false;
 		return u.protocol === "http:" || u.protocol === "https:";
 	} catch {
 		return false;
@@ -180,7 +188,39 @@ function parsePostPayload(body, { isNew, currentSlug = null }) {
 
 // ---- Rotas ----
 async function handle(req, res, url) {
-	// 
+	// Métodos não suportados (inclusive TRACE/OPTIONS) são rejeitados
+	const ALLOWED_METHODS = new Set(["GET", "POST", "PUT", "DELETE"]);
+	if (url.pathname.startsWith("/api/") && !ALLOWED_METHODS.has(req.method)) {
+		return sendError(res, 405, "Metodo nao permitido.");
+	}
+
+	// Health (sem dados sensíveis)
+	if (url.pathname === "/api/health") {
+		return send(res, 200, { ok: true });
+	}
+
+	// Portão de segurança para todas as demais rotas /api
+	if (url.pathname.startsWith("/api/")) {
+		const ip = req.socket.remoteAddress || "desconhecido";
+		// 1. DNS rebinding / CSRF via browser
+		if (!originAllowed(req)) {
+			return sendError(res, 403, "Origem nao permitida.");
+		}
+		// 2. Rate limit
+		const isWrite = req.method === "POST" || req.method === "PUT" || req.method === "DELETE";
+		if (limited(ip, isWrite)) {
+			return sendError(res, 429, "Muitas requisicoes. Tente novamente em instantes.");
+		}
+		// 3. Autenticação (token sempre exigido)
+		if (!authOk(req)) {
+			return sendError(res, 401, "Token de acesso invalido ou ausente.");
+		}
+		// 4. Mutações exigem JSON (bloqueia CSRF por form/no-cors)
+		if ((req.method === "POST" || req.method === "PUT") && !isJsonRequest(req)) {
+			return sendError(res, 415, "Content-Type deve ser application/json.");
+		}
+	}
+
 	// GET /api/posts
 	if (req.method === "GET" && url.pathname === "/api/posts") {
 		const posts = db.listPosts().map((p) => ({ ...p, content: undefined }));
@@ -282,7 +322,7 @@ return send(res, 200, { deleted: slug });
 }
 }
 
-// GET /api/assets/<arquivo> (preview)
+// GET /api/assets/<arquivo> (preview) - contencao real de caminho
 	if (req.method === "GET" && url.pathname.startsWith("/api/assets/")) {
 		const name = decodeURIComponent(url.pathname.slice("/api/assets/".length));
 		const safe = basename(name);
@@ -290,8 +330,16 @@ return send(res, 200, { deleted: slug });
 			return sendError(res, 400, "Nome de arquivo invalido.");
 		}
 		try {
-			const buf = readFileSync(join(ASSETS_DIR, safe));
-			res.writeHead(200, { "Content-Type": MIME[extname(safe)] || "application/octet-stream" });
+			const assetsReal = realpathSync(ASSETS_DIR);
+			const target = realpathSync(join(ASSETS_DIR, safe));
+			if (!target.startsWith(assetsReal + sep)) {
+				return sendError(res, 400, "Caminho fora de assets nao permitido.");
+			}
+			const buf = readFileSync(target);
+			res.writeHead(200, {
+				"Content-Type": MIME[extname(safe)] || "application/octet-stream",
+				...SECURITY_HEADERS,
+			});
 			return res.end(buf);
 		} catch {
 			return sendError(res, 404, "Arquivo nao encontrado.");
