@@ -18,7 +18,8 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    if: github.repository == 'SpetsnazBR/baudokira'
+    runs-on: ubuntu-24.04
     steps:
       # Supply chain: ações fixadas por SHA completo (imutável)
       - name: Checkout
@@ -45,10 +46,11 @@ jobs:
           path: dist
 
   deploy:
+    if: github.repository == 'SpetsnazBR/baudokira'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: build
     steps:
       - name: Deploy to GitHub Pages
