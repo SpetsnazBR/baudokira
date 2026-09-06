@@ -8,13 +8,11 @@ import * as content from "./lib/content.mjs";
 import * as git from "./lib/git.mjs";
 import { slugify, toIsoLocal } from "./lib/slug.mjs";
 
+// Usado apenas em /api/assets (imagens de src/content/assets/)
 const MIME = {
-	".html": "text/html; charset=utf-8",
-	".json": "application/json; charset=utf-8",
-	".css": "text/css; charset=utf-8",
-	".js": "application/javascript; charset=utf-8",
 	".png": "image/png",
 	".jpg": "image/jpeg",
+	".jpeg": "image/jpeg",
 	".webp": "image/webp",
 	".gif": "image/gif",
 	".avif": "image/avif",
@@ -26,10 +24,10 @@ const MAX_BODY = 20 * 1024 * 1024; // 20 MB
 function send(res, status, body, type = "application/json; charset=utf-8") {
 	const payload = typeof body === "string" ? body : JSON.stringify(body);
 	res.writeHead(status, {
-"Content-Type": type,
-"Content-Length": Buffer.byteLength(payload),
-"Cache-Control": "no-store",
-});
+		"Content-Type": type,
+		"Content-Length": Buffer.byteLength(payload),
+		"Cache-Control": "no-store",
+	});
 	res.end(payload);
 }
 
@@ -54,6 +52,7 @@ function readBody(req) {
 		req.on("error", reject);
 	});
 }
+
 
 // ---- Controle de acesso / proteções ─────────────────────────────
 
@@ -181,33 +180,7 @@ function parsePostPayload(body, { isNew, currentSlug = null }) {
 
 // ---- Rotas ----
 async function handle(req, res, url) {
-	// Health (sem dados sensíveis)
-	if (url.pathname === "/api/health") {
-		return send(res, 200, { ok: true });
-	}
-
-	// Portão de segurança para todas as demais rotas /api
-	if (url.pathname.startsWith("/api/")) {
-		const ip = req.socket.remoteAddress || "desconhecido";
-		// 1. DNS rebinding / CSRF via browser
-		if (!originAllowed(req)) {
-			return sendError(res, 403, "Origem nao permitida.");
-		}
-		// 2. Rate limit
-		const isWrite = req.method === "POST" || req.method === "PUT" || req.method === "DELETE";
-		if (limited(ip, isWrite)) {
-			return sendError(res, 429, "Muitas requisicoes. Tente novamente em instantes.");
-		}
-		// 3. Autenticação (token sempre exigido)
-		if (!authOk(req)) {
-			return sendError(res, 401, "Token de acesso invalido ou ausente.");
-		}
-		// 4. Mutações exigem JSON (bloqueia CSRF por form/no-cors)
-		if ((req.method === "POST" || req.method === "PUT") && !isJsonRequest(req)) {
-			return sendError(res, 415, "Content-Type deve ser application/json.");
-		}
-	}
-
+	// 
 	// GET /api/posts
 	if (req.method === "GET" && url.pathname === "/api/posts") {
 		const posts = db.listPosts().map((p) => ({ ...p, content: undefined }));
@@ -310,20 +283,20 @@ return send(res, 200, { deleted: slug });
 }
 
 // GET /api/assets/<arquivo> (preview)
-if (req.method === "GET" && url.pathname.startsWith("/api/assets/")) {
-const name = decodeURIComponent(url.pathname.slice("/api/assets/".length));
-const safe = basename(name);
-if (!/^[a-z0-9][a-z0-9._-]+$/i.test(safe)) {
-return sendError(res, 400, "Nome de arquivo invalido.");
-}
-try {
-const buf = readFileSync(join(ASSETS_DIR, safe));
-res.writeHead(200, { "Content-Type": MIME[extname(safe)] || "application/octet-stream" });
-return res.end(buf);
-} catch {
-return sendError(res, 404, "Arquivo nao encontrado.");
-}
-}
+	if (req.method === "GET" && url.pathname.startsWith("/api/assets/")) {
+		const name = decodeURIComponent(url.pathname.slice("/api/assets/".length));
+		const safe = basename(name);
+		if (!/^[a-z0-9][a-z0-9._-]+$/i.test(safe)) {
+			return sendError(res, 400, "Nome de arquivo invalido.");
+		}
+		try {
+			const buf = readFileSync(join(ASSETS_DIR, safe));
+			res.writeHead(200, { "Content-Type": MIME[extname(safe)] || "application/octet-stream" });
+			return res.end(buf);
+		} catch {
+			return sendError(res, 404, "Arquivo nao encontrado.");
+		}
+	}
 
 return sendError(res, 404, "Rota nao encontrada.");
 }

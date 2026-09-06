@@ -1,12 +1,5 @@
-import {
-	copyFileSync,
-	existsSync,
-	readFileSync,
-	renameSync,
-	unlinkSync,
-	writeFileSync,
-} from "node:fs";
-import { basename, extname, join } from "node:path";
+import { existsSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
+import { basename, join } from "node:path";
 import { ASSETS_DIR, POSTS_DIR, TAGS_JSON } from "./config.mjs";
 import { slugify } from "./slug.mjs";
 
