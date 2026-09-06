@@ -1,4 +1,5 @@
-import { readFileSync, mkdirSync } from "node:fs";
+import { appendFileSync, mkdirSync, readFileSync } from "node:fs";
+import { randomBytes } from "node:crypto";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -16,16 +17,15 @@ export const DATA_DIR = join(CMS_DIR, "data");
 export const DB_FILE = join(DATA_DIR, "cms.db");
 export const UPLOADS_DIR = join(DATA_DIR, "uploads");
 
+export const ENV_FILE = join(CMS_DIR, ".env");
+
 // ── Carregar cms/.env manualmente (sem dependências) ──────────────
-// Regras: não sobrescreve variáveis já existentes no ambiente;
-// linhas "CHAVE=valor", ignorando comentários (#) e linhas vazias.
 function loadEnv() {
-	const envFile = join(CMS_DIR, ".env");
 	let raw;
 	try {
-		raw = readFileSync(envFile, "utf8");
+		raw = readFileSync(ENV_FILE, "utf8");
 	} catch {
-		return; // .env opcional
+		return; // .env ainda não existe
 	}
 	for (const line of raw.split(/\r?\n/)) {
 		const trimmed = line.trim();
@@ -34,7 +34,6 @@ function loadEnv() {
 		if (eq === -1) continue;
 		const key = trimmed.slice(0, eq).trim();
 		let value = trimmed.slice(eq + 1).trim();
-		// remove aspas simples/duplas
 		if (
 			(value.startsWith('"') && value.endsWith('"')) ||
 			(value.startsWith("'") && value.endsWith("'"))
@@ -46,10 +45,22 @@ function loadEnv() {
 }
 loadEnv();
 
+// ── Segurança: token SEMPRE presente (secure by default) ──────────
+// Se o usuário não definir CMS_TOKEN, geramos um aleatório e o
+// persistimos em cms/.env (arquivo ignorado pelo git). Sem token
+// definido, a API NUNCA fica aberta.
+function ensureToken() {
+	if (process.env.CMS_TOKEN && process.env.CMS_TOKEN.trim() !== "") return;
+	const generated = `CMS_TOKEN=${randomBytes(24).toString("hex")}`;
+	appendFileSync(ENV_FILE, `\n${generated}\n`, { flag: "a" });
+	process.env.CMS_TOKEN = generated.split("=")[1];
+}
+ensureToken();
+
 export const env = {
 	host: process.env.CMS_HOST || "127.0.0.1",
 	port: Number(process.env.CMS_PORT || 4444),
-	token: process.env.CMS_TOKEN || "",
+	token: process.env.CMS_TOKEN,
 	autoPush: process.env.CMS_AUTO_PUSH === "1",
 };
 
@@ -57,3 +68,4 @@ export const env = {
 for (const dir of [DATA_DIR, UPLOADS_DIR, POSTS_DIR, ASSETS_DIR]) {
 	mkdirSync(dir, { recursive: true });
 }
+

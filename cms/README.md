@@ -34,11 +34,19 @@ Imagem de capa, Conteúdo em Markdown *, "Marcar como atualizado".
 
 ## Segurança
 
+- **Token obrigatório**: `CMS_TOKEN` é sempre exigido. Se ausente, um token
+  aleatório é gerado automaticamente e salvo em `cms/.env` na 1ª execução.
+- Comparação de token com **timing constante** (anti side-channel).
+- **DNS rebinding / CSRF**: rejeita requisições com `Origin` fora de
+  `127.0.0.1`/`localhost`; mutações (`POST`/`PUT`) exigem `Content-Type:
+  application/json` (bloqueia CSRF via formulário/`no-cors`).
+- **Rate limit**: 300 req/min e 60 mutações/min por IP (`429`).
 - Servidor escuta apenas em `127.0.0.1` (não exposto na rede).
-- `CMS_TOKEN` (opcional): se definido, painel e API exigem o token.
-- Segredos ficam em `cms/.env` — **ignorado pelo git**.
-- Banco (`data/`) e uploads temporários são ignorados pelo git.
-- Valida slug/caminhos (anti path-traversal) e tamanho do corpo (20MB).
+- Segredos ficam em `cms/.env` — **ignorado pelo git**; banco (`data/`) e
+  uploads temporários também são ignorados.
+- Valida slug/caminhos (anti path-traversal), `Content-Type` e tamanho do
+  corpo (20MB); erros 500 não vazam stack/caminhos internos (só no log).
+- SQL preparado (sem SQL injection).
 
 ## Observações
 

@@ -139,7 +139,7 @@ async function api(path, opts = {}) {
 	if (token()) headers.Authorization = "Bearer " + token();
 	const res = await fetch(path, Object.assign({}, opts, { headers }));
 	if (res.status === 401) {
-		const t = prompt("Token de acesso (CMS_TOKEN):");
+		const t = prompt("Token de acesso (consulte o valor em cms/.env):");
 		if (t) { localStorage.setItem("cms_token", t); return api(path, opts); }
 		throw new Error("Acesso negado - informe o token.");
 	}

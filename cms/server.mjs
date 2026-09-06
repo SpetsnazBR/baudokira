@@ -1,6 +1,7 @@
 import { createServer } from "node:http";
 import { readFileSync } from "node:fs";
 import { basename, extname, join } from "node:path";
+import { timingSafeEqual } from "node:crypto";
 import { ASSETS_DIR, CMS_DIR, DATA_DIR, env } from "./lib/config.mjs";
 import * as db from "./lib/db.mjs";
 import * as content from "./lib/content.mjs";
@@ -54,9 +55,60 @@ function readBody(req) {
 	});
 }
 
+// ---- Controle de acesso / proteções ─────────────────────────────
+
+// Comparação de token com timing constante (evita side-channel)
+function safeEqual(a, b) {
+	if (typeof a !== "string" || typeof b !== "string" || a.length !== b.length) {
+		return false;
+	}
+	return timingSafeEqual(Buffer.from(a), Buffer.from(b));
+}
+
 function authOk(req) {
-	if (!env.token) return true;
-	return req.headers.authorization === `Bearer ${env.token}`;
+	// env.token é SEMPRE gerado em config.mjs (secure by default)
+	return safeEqual(req.headers.authorization || "", `Bearer ${env.token}`);
+}
+
+// DNS rebinding / CSRF via browser: rejeita origens estranhas
+const ALLOWED_ORIGIN_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]", "::1"]);
+function originAllowed(req) {
+	const origin = req.headers.origin;
+	if (!origin) return true; // chamadas não-browser (curl, scripts) não têm Origin
+	try {
+		const u = new URL(origin);
+		if (!ALLOWED_ORIGIN_HOSTS.has(u.hostname)) return false;
+		if (u.port && u.port !== String(env.port)) return false;
+		return u.protocol === "http:" || u.protocol === "https:";
+	} catch {
+		return false;
+	}
+}
+
+// Exige application/json em mutações (bloqueia CSRF por formulário/no-cors)
+function isJsonRequest(req) {
+	return (req.headers["content-type"] || "").toLowerCase().startsWith("application/json");
+}
+
+// Rate limit simples por IP (janela deslizante em memória)
+const RL_WINDOW = 60_000; // 60s
+const RL_GENERAL = 300; // 300 req/min por IP
+const RL_WRITE = 60; // 60 mutações/min por IP
+const rlHits = new Map();
+
+function limited(ip, isWrite) {
+	const now = Date.now();
+	if (rlHits.size > 20_000) rlHits.clear(); // limpeza preventiva
+	let arr = rlHits.get(ip);
+	if (!arr) {
+		arr = [];
+		rlHits.set(ip, arr);
+	}
+	while (arr.length && now - arr[0] > RL_WINDOW) arr.shift();
+	const limit = isWrite ? RL_WRITE : RL_GENERAL;
+	if (arr.length >= limit) return true;
+	arr.push(now);
+	return false;
 }
 
 // ---- Validacao de post ----
@@ -129,14 +181,31 @@ function parsePostPayload(body, { isNew, currentSlug = null }) {
 
 // ---- Rotas ----
 async function handle(req, res, url) {
-	// Health
+	// Health (sem dados sensíveis)
 	if (url.pathname === "/api/health") {
-		return send(res, 200, { ok: true, version: "0.1.0" });
+		return send(res, 200, { ok: true });
 	}
 
-	// Demais rotas /api exigem token (se configurado)
-	if (url.pathname.startsWith("/api/") && !authOk(req)) {
-		return sendError(res, 401, "Token de acesso invalido ou ausente.");
+	// Portão de segurança para todas as demais rotas /api
+	if (url.pathname.startsWith("/api/")) {
+		const ip = req.socket.remoteAddress || "desconhecido";
+		// 1. DNS rebinding / CSRF via browser
+		if (!originAllowed(req)) {
+			return sendError(res, 403, "Origem nao permitida.");
+		}
+		// 2. Rate limit
+		const isWrite = req.method === "POST" || req.method === "PUT" || req.method === "DELETE";
+		if (limited(ip, isWrite)) {
+			return sendError(res, 429, "Muitas requisicoes. Tente novamente em instantes.");
+		}
+		// 3. Autenticação (token sempre exigido)
+		if (!authOk(req)) {
+			return sendError(res, 401, "Token de acesso invalido ou ausente.");
+		}
+		// 4. Mutações exigem JSON (bloqueia CSRF por form/no-cors)
+		if ((req.method === "POST" || req.method === "PUT") && !isJsonRequest(req)) {
+			return sendError(res, 415, "Content-Type deve ser application/json.");
+		}
 	}
 
 	// GET /api/posts
@@ -275,8 +344,9 @@ const server = createServer(async (req, res) => {
 	} catch (err) {
 		const msg = String(err.message || "Erro interno.");
 		const status = /invalido|obrigatorio|encontrado|suportado|grande/.test(msg) ? 400 : 500;
-		console.error("[cms]", err);
-		sendError(res, status, msg);
+		console.error("[cms]", err); // detalhes completos apenas no log local
+		// Não vaza caminhos/stack internos para o cliente
+		sendError(res, status, status >= 500 ? "Erro interno." : msg);
 	}
 });
 
@@ -287,7 +357,8 @@ server.listen(env.port, env.host, () => {
 	console.log("  ---------------------------------------------");
 	console.log(`  Painel   : http://${env.host}:${env.port}/`);
 	console.log(`  Banco    : SQLite (${DATA_DIR})`);
-	console.log(`  Token    : ${env.token ? "exigido (Authorization: Bearer)" : "desativado"}`);
+	console.log(`  Token    : OBRIGATÓRIO — valor em cms/.env (CMS_TOKEN)`);
+	console.log(`  RateLimit: ${RL_GENERAL} req/min e ${RL_WRITE} mutações/min por IP`);
 	console.log(`  AutoPush : ${env.autoPush ? "LIGADO (faz git push)" : "desligado (só commit local)"}`);
 	console.log(`  Conteúdo : src/content/ (posts/ + assets/ + tags.json)`);
 	console.log("  =============================================");
