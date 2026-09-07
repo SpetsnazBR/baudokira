@@ -1,0 +1,56 @@
+name: Criar GitHub Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+# Permissão mínima necessária para criar a GitHub Release
+permissions:
+  contents: write
+
+# Impede releases simultâneas
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.repository == 'SpetsnazBR/baudokira'
+    runs-on: ubuntu-24.04
+    steps:
+      # Supply chain: ações fixadas por SHA completo (imutável)
+      - name: Checkout (com histórico e tags)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+
+      - name: Montar notas da release
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF#refs/tags/}"
+          PREV="$(git tag --list 'v*' --sort=-version:refname \
+            | awk -v t="${TAG}" '$0 == t { skip = 1; next } skip && !done { print; done = 1 }' || true)"
+
+          {
+            echo "# ${TAG}"
+            echo
+            echo "## O que mudou"
+            echo
+            if [ -n "${PREV}" ]; then
+              git log --no-merges --pretty=format:'- %s' "${PREV}..${TAG}"
+            else
+              git log --no-merges --pretty=format:'- %s' "${TAG}"
+            fi
+            echo
+          } > /tmp/release_body.md
+
+      - name: Criar GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          gh release create "${TAG}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "${TAG}" \
+            --notes-file /tmp/release_body.md
