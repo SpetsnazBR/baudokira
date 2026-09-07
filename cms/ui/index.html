@@ -57,6 +57,23 @@
 	.toolbar button { padding:.22rem .6rem; font-size:.78rem; background:#262626; }
 	.toolbar button:hover { background:#333; }
 	.toolbar button b, .toolbar button i, .toolbar button s { font-style:normal; color:inherit; }
+	.emoji-picker { position: relative; margin-top:.45rem; }
+	.emoji-picker .emoji-grid {
+		position:absolute; left:0; top:calc(100% + 4px); z-index:20;
+		width:min(480px, 92vw); max-height:200px; overflow:auto;
+		background:#0e0e0e; border:1px solid var(--border); border-radius:8px;
+		padding:.45rem; display:grid; grid-template-columns:repeat(auto-fill,minmax(2.1rem,1fr));
+		gap:.1rem .15rem;
+	}
+	.emoji-picker .emoji-group {
+		grid-column:1 / -1; font-size:.66rem; text-transform:uppercase;
+		color:var(--muted); letter-spacing:.06em; margin:.25rem 0 .05rem;
+	}
+	.emoji-picker .emoji-btn {
+		font-size:1.15rem; line-height:1; padding:.18rem; background:transparent;
+		border:0; border-radius:6px; cursor:pointer;
+	}
+	.emoji-picker .emoji-btn:hover { background:#262626; }
 	.tags-hint { font-size:.72rem; color:var(--muted); margin-top:.2rem; }
 	.publish-note { font-size:.72rem; color:var(--muted); margin-top:.3rem; }
 	.badge { font-size:.7rem; padding:.1rem .45rem; border-radius:20px; border:1px solid var(--border); color:var(--muted); }
@@ -109,6 +126,10 @@
 			<div class="check"><input type="checkbox" id="f-draft" checked /><label for="f-draft" style="margin:0">Rascunho (não publicar ainda)</label></div>
 			<div class="check"><input type="checkbox" id="f-updated" /><label for="f-updated" style="margin:0">Marcar como atualizado (updatedAt = agora)</label></div>
 			<label for="f-content">Conteúdo (Markdown) *</label>
+			<div class="emoji-picker">
+				<button type="button" class="secondary" id="emojiToggle" aria-expanded="false">😊 Emojis</button>
+				<div class="emoji-grid" id="emojiGrid" hidden></div>
+			</div>
 			<div class="toolbar" role="toolbar" aria-label="Formatação Markdown">
 				<span class="tb-label">Títulos</span>
 				<button type="button" data-prefix="# " data-marker="#" title="Título 1 (H1)">H1</button>
@@ -665,6 +686,46 @@ document.querySelectorAll(".toolbar [data-wrap]").forEach((b) =>
 	b.onclick = () => wrapSelection(mta(), b.dataset.wrap, b.dataset.wrap));
 document.querySelectorAll(".toolbar [data-snippet]").forEach((b) =>
 	b.onclick = () => snippetFormat(b.dataset.snippet));
+
+// ---- Seletor de emojis (facilita a formatação do texto) ----
+// Listas separadas por espaço (cada "palavra" é um emoji).
+const EMOJI_GROUPS = [
+	["Carinhas e gestos", "😀 😄 😁 😆 😂 🤣 😊 😇 🙂 😉 😍 🥰 😘 😋 😎 🤓 🧐 🤔 🤗 🤭 😴 😪 😮💨 😢 😭 😤 😡 🤯 😱 🥶 🥵 😷 🤒 🤕 🤮 🫡 🤝 👍 👎 👌 ✌️ 🤞 🤟 🤘 👏 🙏 💪 👀 🧠 👋 ✋ 🫶 💅"],
+	["Corações e símbolos", "❤️ 🧡 💛 💚 💙 💜 🖤 🤍 🤎 💔 💕 💞 💓 💗 💖 💘 💝 ✅ ❌ ❎ ➕ ➖ ➗ ✖️ 🔁 🔂 ▶️ ⏸️ ▶️ 🔃 🔄 ⭐ 🌟 ✨ ⚡ 🔥 💫 💥 💯 💬 💭 🕳️ ♨️ 💦 💨 ☀️ 🌙 ☁️ ⛅ 🌈 ❄️ 🌪️"],
+	["Tecnologia, objetos e ferramentas", "💻 🖥️ ⌨️ 🖱️ 🖨️ 📱 💾 📷 📸 🎥 📺 🎙️ 🔊 🔔 ⏰ ⌚ 📅 📆 📁 📂 🗂️ 📋 📝 ✏️ ✒️ 🖊️ 🖋️ 🖌️ 🖍️ 📌 📍 📎 ✂️ 🔑 🔒 🔓 🔗 🧷 🧹 🧽 🛠️ 🔧 🔨 ⚙️ 🧰 🔩 🧲 💡 🔦 🔋 🔌 💳 💰 🧾 🏷️ 📦 🎁 🧊 📚 🔖 🗑️"],
+	["Comida, animais, natureza e mais", "🍎 🍊 🍌 🍉 🍓 🍒 🍑 🥭 🍍 🥥 🥑 🍅 🌽 🥕 🥦 🥐 🍞 🧀 🍳 🍔 🍟 🍕 🥪 🌮 🍜 🍣 🍦 🍩 🍪 🎂 🧁 🍫 ☕ 🍵 🍺 🥂 🥤 🐶 🐱 🐭 🐰 🦊 🐻 🐼 🦁 🐯 🐸 🐵 🦄 🐷 🐺 🦉 🦋 🐝 🐢 🐙 🦈 🌍 🌎 🌏 🌱 🌿 🍀 🌻 🌹 🌵 🌲 🌊 ☀️ 🚀 ✈️ 🚗 🚲 ⛵ 🎉 🎊 🎈 🎁 🏆 🎮 🎧 🎵 🎶 🎨 🧩 🔮 ⭐"],
+];
+function insertEmoji(emoji) {
+	insertAtCursor(mta(), emoji);
+	$("emojiToggle").setAttribute("aria-expanded", "false");
+	$("emojiGrid").hidden = true;
+}
+function toggleEmojiPicker() {
+	const grid = $("emojiGrid");
+	grid.hidden = !grid.hidden;
+	$("emojiToggle").setAttribute("aria-expanded", String(!grid.hidden));
+}
+function buildEmojiPicker() {
+	const grid = $("emojiGrid");
+	if (!grid) return;
+	const parts = [];
+	for (const [label, list] of EMOJI_GROUPS) {
+		parts.push('<div class="emoji-group">' + label + "</div>");
+		for (const emoji of list.split(" ")) {
+			if (!emoji) continue;
+			parts.push(
+				'<button type="button" class="emoji-btn" data-emoji="' + emoji +
+				'" title="Inserir ' + emoji + '">' + emoji + "</button>",
+			);
+		}
+	}
+	grid.innerHTML = parts.join("");
+	grid.querySelectorAll(".emoji-btn").forEach((b) => {
+		b.onclick = () => insertEmoji(b.dataset.emoji);
+	});
+}
+$("emojiToggle").onclick = toggleEmojiPicker;
+buildEmojiPicker();
 
 $("f-coverFile").addEventListener("change", async (e) => {
 	const file = e.target.files[0];
