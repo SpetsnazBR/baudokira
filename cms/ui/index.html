@@ -75,6 +75,8 @@
 		<h2>Postagens</h2>
 		<ul id="posts"></ul>
 		<button class="secondary" id="newPostBtn" style="width:100%;margin-top:.6rem">+ Nova postagem</button>
+			<button class="secondary" id="previewBtn" style="width:100%;margin-top:.4rem" disabled title="Crie/salve uma postagem para habilitar">👁️ Preview no blog</button>
+
 	</section>
 	<section class="card">
 		<div id="msg"></div>
@@ -146,6 +148,8 @@
 const $ = (id) => document.getElementById(id);
 let current = null; // { slug, post }
 let pendingCover = null;
+// Endereço/base do servidor Astro (usados pelo botão "Preview no blog")
+let astroCfg = { url: "http://127.0.0.1:3334", base: "/baudokira" };
 
 function token() { return localStorage.getItem("cms_token") || ""; }
 function setMsg(text, kind) {
@@ -193,9 +197,14 @@ async function refresh() {
 		const [{ posts }, { tags }, git] = await Promise.all([
 			api("/api/posts"), api("/api/tags"), api("/api/status"),
 		]);
+		if (git.astro) {
+			astroCfg.url = git.astro.url || astroCfg.url;
+			astroCfg.base = git.astro.base || astroCfg.base;
+		}
+		updatePreview();
 		renderPosts(posts);
 		$("tagsHint").textContent = "Sugestoes: " + (tags.length ? tags.join(", ") : "(nenhuma ainda)");
-		$("gitStatus").textContent = "branch " + git.branch + " · " + git.commitsAhead + " commit(s) a frente do origin";
+		$("gitStatus").textContent = "branch " + git.branch + " · " + git.commitsAhead + " commit(s) · Astro " + astroCfg.url;
 	} catch (e) { setMsg(e.message, "err"); }
 }
 
@@ -241,6 +250,7 @@ function resetForm() {
 	$("publishNote").textContent = "";
 	$("saveBtn").textContent = "Salvar (gera .md no Astro)";
 	$("f-title").focus();
+	updatePreview();
 }
 
 async function openPost(slug) {
@@ -263,6 +273,7 @@ async function openPost(slug) {
 		$("deleteBtn").style.display = "";
 		$("publishBtn").style.display = "";
 		$("saveBtn").textContent = "Salvar alteracoes";
+		updatePreview();
 		refresh();
 	} catch (e) { setMsg(e.message, "err"); }
 }
@@ -273,6 +284,34 @@ function showCover(cover) {
 		img.src = "/api/assets/" + encodeURIComponent(cover.replace("../assets/", ""));
 		img.style.display = "block";
 	} else { img.style.display = "none"; img.removeAttribute("src"); }
+}
+
+// ---- Preview no blog (Astro em execução) ----
+function astroPreviewUrl() {
+	if (!current || !current.slug) return "";
+	const host = (astroCfg.url || "http://127.0.0.1:3334").replace(/\/+$/, "");
+	const base = (astroCfg.base || "/baudokira").replace(/\/+$/, "");
+	return host + base + "/blog/" + encodeURIComponent(current.slug);
+}
+function updatePreview() {
+	const b = $("previewBtn");
+	if (current && current.slug) {
+		b.disabled = false;
+		b.title = "Abrir no blog (Astro): " + astroPreviewUrl();
+	} else {
+		b.disabled = true;
+		b.title = "Crie/salve uma postagem para habilitar o preview.";
+	}
+}
+function previewPost() {
+	if (!current || !current.slug) {
+		setMsg("Salve a postagem primeiro para gerar o preview.", "err");
+		return;
+	}
+	if (current.post && current.post.draft) {
+		setMsg("Este post é um RASCUNHO: a página só é publicada no blog após desmarcar 'Rascunho' e salvar.", "info");
+	}
+	window.open(astroPreviewUrl(), "_blank", "noopener");
 }
 
 function collectPayload() {
@@ -303,6 +342,7 @@ async function save() {
 			: await api("/api/posts", { method: "POST", body: JSON.stringify(payload) });
 		pendingCover = null;
 		current = { slug: post.slug, post };
+		updatePreview();
 		$("f-originalSlug").value = post.slug;
 		$("f-slug").value = post.slug;
 		$("publishBtn").style.display = "";
@@ -526,6 +566,7 @@ $("f-imgFile").addEventListener("change", async (e) => {
 $("postForm").addEventListener("submit", (e) => { e.preventDefault(); save(); });
 $("publishBtn").onclick = publish;
 $("deleteBtn").onclick = remove;
+$("previewBtn").onclick = previewPost;
 $("newPostBtn").onclick = () => { resetForm(); refresh(); };
 $("tokenBtn").onclick = () => {
 	const t = prompt("Token de acesso (deixe vazio para remover):", token());

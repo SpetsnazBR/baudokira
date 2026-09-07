@@ -237,9 +237,12 @@ async function handle(req, res, url) {
 		return send(res, 200, { tags: merged });
 	}
 
-	// GET /api/status (git)
+	// GET /api/status (git + astro preview)
 	if (req.method === "GET" && url.pathname === "/api/status") {
-		return send(res, 200, git.statusInfo());
+		return send(res, 200, {
+			...git.statusInfo(),
+			astro: { url: env.astroUrl, base: env.astroBase },
+		});
 	}
 
 	// POST /api/posts (criar)
