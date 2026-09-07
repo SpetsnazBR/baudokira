@@ -209,6 +209,28 @@ chmod +x run-servers.sh test-servers.sh
 4. **Acessar o servidor:**
    - Blog: http://localhost:3334
 
+## 🌿 Organização de Branches e Conteúdo
+
+- **`master`** — código do blog (site + infraestrutura). **Não contém a pasta de postagens** (`src/content/posts/`).
+- **`blog-posts`** — branch dedicada às **postagens**. É nela que o conteúdo (`src/content/posts/`) é criado e versionado.
+
+Fluxo de publicação de conteúdo: escreva/commite as postagens na branch `blog-posts`;
+quando quiser publicá-las no site (o GitHub Pages builda a partir de `master`), faça o
+`merge` de `blog-posts` em `master`:
+
+```bash
+git checkout master
+git merge blog-posts
+git push origin master
+```
+
+## 📦 Releases
+
+Toda **funcionalidade nova** implementada no projeto deve ser registrada na seção
+**Releases** do repositório, com a descrição do que foi alterado/implementado e o
+número da versão. O processo, o versionamento (SemVer) e a automação estão descritos
+em [`RELEASES.md`](./RELEASES.md).
+
 ## 🚀 Deploy (GitHub Pages)
 
 O site é **100% estático** (sem servidor/adapter Node) e publica automaticamente via **GitHub Actions** a cada push na branch `master`.
