@@ -61,12 +61,16 @@ const readingTime = timeToRead(bodyContent);
 	<article slot="right" data-pagefind-body>
 		<Card>
 			<div class="article-header" id="_top" data-pagefind-ignore>
-				<ImageGlow
-					quality={100}
-					class="article-image"
-					src={post.data.image}
-					alt={title}
-				/>
+				{
+					post.data.image && (
+						<ImageGlow
+							quality={100}
+							class="article-image"
+							src={post.data.image}
+							alt={title}
+						/>
+					)
+				}
 				<div class="header">
 					<div>
 						<h1 class="no-mt article-h1">{title}</h1>

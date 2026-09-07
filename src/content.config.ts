@@ -64,7 +64,9 @@ const posts = defineCollection({
 			description: z.string(),
 			tags: z.array(reference("tags")),
 			draft: z.boolean().optional().default(false),
-			image: image(),
+			// Capa opcional: o CMS permite salvar rascunhos sem imagem,
+			// e a página/blog tratam a ausência de capa sem quebrar o Astro.
+			image: image().optional(),
 		}),
 });
 
