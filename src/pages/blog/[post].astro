@@ -62,7 +62,11 @@ const readingTime = timeToRead(bodyContent);
 	</div>
 	<article slot="right" data-pagefind-body>
 		<Card>
-			<div class="article-header" id="_top" data-pagefind-ignore>
+			<div
+				class:list={["article-header", { "no-cover": !post.data.image }]}
+				id="_top"
+				data-pagefind-ignore
+			>
 				{
 					post.data.image && (
 						<ImageGlow
