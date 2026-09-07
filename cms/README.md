@@ -35,6 +35,10 @@ Painel: **http://127.0.0.1:4444/**
   padrão `http://localhost:3334` + `/baudokira`). Antes de abrir, o CMS testa se o
   Astro está acessível (com fallback entre `localhost` e `127.0.0.1`) e avisa se não
   estiver no ar.
+- 💾 **Auto-save a cada 10s**: o conteúdo digitado é salvo automaticamente a cada
+  10 segundos (indicador "✏️ alterações não salvas / 💾 salvo às…" abaixo do editor).
+  Abrir o **preview** também salva primeiro, então o que você escreveu sempre aparece
+  no blog — mesmo que falte energia.
 - 🚀 Botão **Publicar** faz `git add`+`git commit` do conteúdo (e `git push`
   se `CMS_AUTO_PUSH=1`).
 
