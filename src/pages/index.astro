@@ -10,9 +10,11 @@ import ImageGlow from "../components/ImageGlow.astro";
 import Layout from "../layouts/Layout.astro";
 import { base } from "../lib/site";
 
+// Lista os posts recentes. Em DEV os rascunhos também aparecem (preview
+// local); no build de produção, apenas posts publicados.
 const [posts, projects, about, workExperience, quickInfo, socials] =
 	await Promise.all([
-		getCollection("posts", (post) => post.data.draft !== true),
+		getCollection("posts", (post) => import.meta.env.DEV || post.data.draft !== true),
 		getCollection("projects"),
 		getEntry("other", "about"),
 		getCollection("workExperience"),

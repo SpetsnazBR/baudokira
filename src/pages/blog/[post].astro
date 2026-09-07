@@ -6,7 +6,7 @@ import Card from "../../components/Card.astro";
 import ImageGlow from "../../components/ImageGlow.astro";
 import Layout from "../../layouts/Layout.astro";
 import { timeToRead } from "../../lib/reading-time";
-import { base } from "../../lib/site";
+import { base, formatDateTime } from "../../lib/site";
 
 // Gera as páginas dos posts. No ambiente DEV também renderiza rascunhos
 // (para o autor poder usar o "Preview no blog"); no build de produção,
@@ -78,7 +78,7 @@ const readingTime = timeToRead(bodyContent);
 						<h1 class="no-mt article-h1">{title}</h1>
 					</div>
 					<div class="article-info">
-						<span>{createdAt.toLocaleDateString()}</span>
+						<span>{formatDateTime(createdAt)}</span>
 						<span>/</span>
 						<span>{readingTime} minuto{readingTime === 1 ? "" : "s"} de leitura</span>
 						<span>/</span>
