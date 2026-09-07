@@ -32,7 +32,9 @@ Painel: **http://127.0.0.1:4444/**
   de português instalado no navegador.
 - 👁️ **Preview no blog**: botão abaixo de "+ Nova postagem" abre a postagem atual
   no servidor Astro em execução (configurável via `CMS_ASTRO_URL`/`CMS_ASTRO_BASE`;
-  padrão `http://127.0.0.1:3334` + `/baudokira`).
+  padrão `http://localhost:3334` + `/baudokira`). Antes de abrir, o CMS testa se o
+  Astro está acessível (com fallback entre `localhost` e `127.0.0.1`) e avisa se não
+  estiver no ar.
 - 🚀 Botão **Publicar** faz `git add`+`git commit` do conteúdo (e `git push`
   se `CMS_AUTO_PUSH=1`).
 

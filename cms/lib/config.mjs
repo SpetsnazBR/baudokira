@@ -62,8 +62,9 @@ export const env = {
 	port: Number(process.env.CMS_PORT || 4444),
 	token: process.env.CMS_TOKEN,
 	autoPush: process.env.CMS_AUTO_PUSH === "1",
-	// Servidor Astro em execução (usado pelo botão "Preview no blog")
-	astroUrl: process.env.CMS_ASTRO_URL || "http://127.0.0.1:3334",
+	// Servidor Astro em execução (usado pelo botão "Preview no blog").
+	// "localhost" funciona tanto para dev preso em IPv4 quanto em IPv6 (::1).
+	astroUrl: process.env.CMS_ASTRO_URL || "http://localhost:3334",
 	astroBase: process.env.CMS_ASTRO_BASE || "/baudokira",
 };
 

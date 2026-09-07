@@ -149,7 +149,7 @@ const $ = (id) => document.getElementById(id);
 let current = null; // { slug, post }
 let pendingCover = null;
 // Endereço/base do servidor Astro (usados pelo botão "Preview no blog")
-let astroCfg = { url: "http://127.0.0.1:3334", base: "/baudokira" };
+let astroCfg = { url: "http://localhost:3334", base: "/baudokira" };
 
 function token() { return localStorage.getItem("cms_token") || ""; }
 function setMsg(text, kind) {
@@ -289,7 +289,7 @@ function showCover(cover) {
 // ---- Preview no blog (Astro em execução) ----
 function astroPreviewUrl() {
 	if (!current || !current.slug) return "";
-	const host = (astroCfg.url || "http://127.0.0.1:3334").replace(/\/+$/, "");
+	const host = (astroCfg.url || "http://localhost:3334").replace(/\/+$/, "");
 	const base = (astroCfg.base || "/baudokira").replace(/\/+$/, "");
 	return host + base + "/blog/" + encodeURIComponent(current.slug);
 }
@@ -303,7 +303,34 @@ function updatePreview() {
 		b.title = "Crie/salve uma postagem para habilitar o preview.";
 	}
 }
-function previewPost() {
+// Candidatos a URL do preview: a configurada + troca localhost/127.0.0.1
+function previewCandidates() {
+	const urls = [];
+	if (!current || !current.slug) return urls;
+	const first = astroPreviewUrl();
+	urls.push(first);
+	try {
+		const p = new URL(first);
+		let altHost = null;
+		if (p.hostname === "localhost") altHost = "127.0.0.1";
+		else if (p.hostname === "127.0.0.1") altHost = "localhost";
+		if (altHost) {
+			const alt = new URL(first);
+			alt.hostname = altHost;
+			urls.push(alt.href);
+		}
+	} catch {
+		// URL inválida: fica só com o valor original
+	}
+	return urls;
+}
+// Testa se o servidor respondeu (fetch no-cors: só falha se não houver rede)
+function astroReachable(url) {
+	return fetch(url, { method: "HEAD", mode: "no-cors", cache: "no-store" })
+		.then(() => true)
+		.catch(() => false);
+}
+async function previewPost() {
 	if (!current || !current.slug) {
 		setMsg("Salve a postagem primeiro para gerar o preview.", "err");
 		return;
@@ -311,7 +338,23 @@ function previewPost() {
 	if (current.post && current.post.draft) {
 		setMsg("Este post é um RASCUNHO: a página só é publicada no blog após desmarcar 'Rascunho' e salvar.", "info");
 	}
-	window.open(astroPreviewUrl(), "_blank", "noopener");
+	for (const url of previewCandidates()) {
+		if (await astroReachable(url)) {
+			try {
+				astroCfg.url = new URL(url).origin;
+				updatePreview();
+			} catch {
+				// mantém a configuração atual
+			}
+			window.open(url, "_blank", "noopener");
+			return;
+		}
+	}
+	setMsg(
+		"Servidor Astro não está acessível em " + astroCfg.url +
+		". Inicie com ./run-servers.sh (ou npm run dev) e tente de novo.",
+		"err",
+	);
 }
 
 function collectPayload() {
