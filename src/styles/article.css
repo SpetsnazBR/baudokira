@@ -164,6 +164,20 @@ code:not(.astro-code code) {
 	z-index: 1;
 }
 
+/* Posts sem imagem de capa: o cabeçalho vai no fluxo normal do documento,
+   em vez de ficar posicionado por cima de uma imagem (que não existe),
+   evitando que título/data/hora fiquem invisíveis/cortados. */
+.article-header.no-cover {
+	height: auto;
+}
+
+.article-header.no-cover .header {
+	position: static;
+	margin: 0 0 1.25rem;
+	padding: 0;
+	max-width: none;
+}
+
 .end-of-article {
 	margin-top: 1rem;
 	margin-bottom: 1.5rem;
