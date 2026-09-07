@@ -1,9 +1,9 @@
 [
 	{
 		"id": 1,
-		"duration": "2024 - presente",
-		"company": "Comunidade Astro",
-		"title": "Tema Astro",
-		"description": "Existindo como um tema Astro para qualquer pessoa usar."
+		"duration": "2023 - presente",
+		"company": "Brasil Tecpar",
+		"title": "Analista de NOC",
+		"description": "Atuo no monitoramento do cluster-BH, uma rede composta por mais de 300.000 clientes, que envolve os principais provedores de Belo Horizonte e região. No meu dia a dia utilizo ferramentas de observabilidade como Zabbix e Grafana, além de acessar equipamentos como OLTs, ONTs e Switches, realizando análises ponto a ponto, identificando rompimentos em redes FTTH e backbone, assim como demais funções rotineiras de um ambiente de NOC."
 	}
 ]
