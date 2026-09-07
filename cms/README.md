@@ -27,6 +27,9 @@ Painel: **http://127.0.0.1:4444/**
 - 🧰 Barra de formatação **Markdown**: títulos H1–H6, negrito, itálico, riscado,
   código inline e em bloco, link, citação, listas (com marcadores, numerada e de
   tarefas), linha horizontal e tabela — aplicadas na linha/seleção do editor.
+- ✍️ **Corretor ortográfico PT-BR**: `spellcheck` nativo do navegador habilitado
+  (`lang="pt-BR"`) na caixa de texto — erros são sublinhados conforme o dicionário
+  de português instalado no navegador.
 - 🚀 Botão **Publicar** faz `git add`+`git commit` do conteúdo (e `git push`
   se `CMS_AUTO_PUSH=1`).
 
