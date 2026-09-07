@@ -1,6 +1,6 @@
 name: Criar GitHub Release
 
-on:
+"on":
   push:
     tags:
       - "v*"
@@ -28,10 +28,8 @@ jobs:
       - name: Montar notas da release
         run: |
           set -euo pipefail
-          TAG="${GITHUB_REF#refs/tags/}"
-          PREV="$(git tag --list 'v*' --sort=-version:refname \
-            | awk -v t="${TAG}" '$0 == t { skip = 1; next } skip && !done { print; done = 1 }' || true)"
-
+          TAG="${GITHUB_REF_NAME}"
+          PREV="$(git describe --tags --abbrev=0 "${TAG}^" 2>/dev/null || true)"
           {
             echo "# ${TAG}"
             echo
@@ -40,7 +38,6 @@ jobs:
             if [ -n "${PREV}" ]; then
               git log --no-merges --pretty=format:'- %s' "${PREV}..${TAG}"
             else
-              # Primeira release: limita o corpo aos commits mais recentes
               git log --no-merges -40 --pretty=format:'- %s' "${TAG}"
             fi
             echo
@@ -48,10 +45,9 @@ jobs:
 
       - name: Criar GitHub Release
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: "${{ github.token }}"
         run: |
-          TAG="${GITHUB_REF#refs/tags/}"
-          gh release create "${TAG}" \
+          gh release create "${GITHUB_REF_NAME}" \
             --repo "${GITHUB_REPOSITORY}" \
-            --title "${TAG}" \
+            --title "${GITHUB_REF_NAME}" \
             --notes-file /tmp/release_body.md
