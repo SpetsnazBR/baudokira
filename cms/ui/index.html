@@ -65,6 +65,8 @@
 		padding:.45rem; display:grid; grid-template-columns:repeat(auto-fill,minmax(2.1rem,1fr));
 		gap:.1rem .15rem;
 	}
+	/* O atributo hidden precisa vencer o display:grid acima */
+	.emoji-picker .emoji-grid[hidden] { display:none; }
 	.emoji-picker .emoji-group {
 		grid-column:1 / -1; font-size:.66rem; text-transform:uppercase;
 		color:var(--muted); letter-spacing:.06em; margin:.25rem 0 .05rem;
@@ -695,15 +697,29 @@ const EMOJI_GROUPS = [
 	["Tecnologia, objetos e ferramentas", "💻 🖥️ ⌨️ 🖱️ 🖨️ 📱 💾 📷 📸 🎥 📺 🎙️ 🔊 🔔 ⏰ ⌚ 📅 📆 📁 📂 🗂️ 📋 📝 ✏️ ✒️ 🖊️ 🖋️ 🖌️ 🖍️ 📌 📍 📎 ✂️ 🔑 🔒 🔓 🔗 🧷 🧹 🧽 🛠️ 🔧 🔨 ⚙️ 🧰 🔩 🧲 💡 🔦 🔋 🔌 💳 💰 🧾 🏷️ 📦 🎁 🧊 📚 🔖 🗑️"],
 	["Comida, animais, natureza e mais", "🍎 🍊 🍌 🍉 🍓 🍒 🍑 🥭 🍍 🥥 🥑 🍅 🌽 🥕 🥦 🥐 🍞 🧀 🍳 🍔 🍟 🍕 🥪 🌮 🍜 🍣 🍦 🍩 🍪 🎂 🧁 🍫 ☕ 🍵 🍺 🥂 🥤 🐶 🐱 🐭 🐰 🦊 🐻 🐼 🦁 🐯 🐸 🐵 🦄 🐷 🐺 🦉 🦋 🐝 🐢 🐙 🦈 🌍 🌎 🌏 🌱 🌿 🍀 🌻 🌹 🌵 🌲 🌊 ☀️ 🚀 ✈️ 🚗 🚲 ⛵ 🎉 🎊 🎈 🎁 🏆 🎮 🎧 🎵 🎶 🎨 🧩 🔮 ⭐"],
 ];
-function insertEmoji(emoji) {
-	insertAtCursor(mta(), emoji);
+function closeEmojiPicker() {
 	$("emojiToggle").setAttribute("aria-expanded", "false");
 	$("emojiGrid").hidden = true;
+}
+function insertEmoji(emoji) {
+	insertAtCursor(mta(), emoji);
+	closeEmojiPicker();
 }
 function toggleEmojiPicker() {
 	const grid = $("emojiGrid");
 	grid.hidden = !grid.hidden;
 	$("emojiToggle").setAttribute("aria-expanded", String(!grid.hidden));
+}
+// Fecha o seletor ao clicar fora dele (o seletor só abre ao clicar no botão)
+if (document.addEventListener) {
+	document.addEventListener("click", (ev) => {
+		const grid = $("emojiGrid");
+		if (grid.hidden) return;
+		const toggle = $("emojiToggle");
+		const picker = toggle.closest ? toggle.closest(".emoji-picker") : null;
+		if (picker && picker.contains(ev.target)) return;
+		closeEmojiPicker();
+	});
 }
 function buildEmojiPicker() {
 	const grid = $("emojiGrid");
