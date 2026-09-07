@@ -39,6 +39,9 @@ Painel: **http://127.0.0.1:4444/**
   10 segundos (indicador "✏️ alterações não salvas / 💾 salvo às…" abaixo do editor).
   Abrir o **preview** também salva primeiro, então o que você escreveu sempre aparece
   no blog — mesmo que falte energia.
+- 😊 **Emojis**: botão "😊 Emojis" logo abaixo de "Conteúdo (Markdown)" abre um
+  seletor com emojis organizados por categoria — clique para inserir na posição do
+  cursor (e o auto-save guarda).
 - 🚀 Botão **Publicar** faz `git add`+`git commit` do conteúdo (e `git push`
   se `CMS_AUTO_PUSH=1`).
 
