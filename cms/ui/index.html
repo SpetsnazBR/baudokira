@@ -336,7 +336,7 @@ async function previewPost() {
 		return;
 	}
 	if (current.post && current.post.draft) {
-		setMsg("Este post é um RASCUNHO: a página só é publicada no blog após desmarcar 'Rascunho' e salvar.", "info");
+		setMsg("Rascunho: visível agora no preview local (dev). Para publicar no site, desmarque 'Rascunho' e salve.", "info");
 	}
 	for (const url of previewCandidates()) {
 		if (await astroReachable(url)) {

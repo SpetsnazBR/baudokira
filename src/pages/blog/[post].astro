@@ -8,11 +8,13 @@ import Layout from "../../layouts/Layout.astro";
 import { timeToRead } from "../../lib/reading-time";
 import { base } from "../../lib/site";
 
-// Gera páginas estáticas para todos os posts publicados
+// Gera as páginas dos posts. No ambiente DEV também renderiza rascunhos
+// (para o autor poder usar o "Preview no blog"); no build de produção,
+// rascunhos continuam fora do site.
 export async function getStaticPaths() {
 	const posts = await getCollection(
 		"posts",
-		(post) => post.data.draft !== true,
+		(post) => import.meta.env.DEV || post.data.draft !== true,
 	);
 
 	return posts.map((post) => ({
