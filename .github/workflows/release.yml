@@ -40,7 +40,8 @@ jobs:
             if [ -n "${PREV}" ]; then
               git log --no-merges --pretty=format:'- %s' "${PREV}..${TAG}"
             else
-              git log --no-merges --pretty=format:'- %s' "${TAG}"
+              # Primeira release: limita o corpo aos commits mais recentes
+              git log --no-merges -40 --pretty=format:'- %s' "${TAG}"
             fi
             echo
           } > /tmp/release_body.md
