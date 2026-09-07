@@ -135,6 +135,7 @@
 				<input type="file" id="f-imgFile" accept="image/*" style="display:none" />
 			</div>
 			<textarea id="f-content" lang="pt-BR" spellcheck="true" required placeholder="Escreva aqui em Markdown…"></textarea>
+			<div class="publish-note" id="saveState" style="margin-top:.4rem"></div>
 			<div class="row" style="margin-top:.8rem">
 				<button type="submit" id="saveBtn">💾 Salvar (gera .md no Astro)</button>
 				<button type="button" class="secondary" id="publishBtn">🚀 Publicar no GitHub</button>
@@ -150,6 +151,11 @@ let current = null; // { slug, post }
 let pendingCover = null;
 // Endereço/base do servidor Astro (usados pelo botão "Preview no blog")
 let astroCfg = { url: "http://localhost:3334", base: "/baudokira" };
+// Estado do auto-save
+let dirty = false; // há alterações ainda não salvas
+let autoSaving = false; // um auto-save está em andamento
+let autoError = null; // última falha do auto-save (para exibir)
+let lastSaveAt = null; // horário do último salvamento
 
 function token() { return localStorage.getItem("cms_token") || ""; }
 function setMsg(text, kind) {
@@ -251,6 +257,10 @@ function resetForm() {
 	$("saveBtn").textContent = "Salvar (gera .md no Astro)";
 	$("f-title").focus();
 	updatePreview();
+	dirty = false;
+	autoError = null;
+	lastSaveAt = null;
+	updateSaveState();
 }
 
 async function openPost(slug) {
@@ -274,6 +284,9 @@ async function openPost(slug) {
 		$("publishBtn").style.display = "";
 		$("saveBtn").textContent = "Salvar alteracoes";
 		updatePreview();
+		dirty = false;
+		autoError = null;
+		updateSaveState();
 		refresh();
 	} catch (e) { setMsg(e.message, "err"); }
 }
@@ -335,6 +348,12 @@ async function previewPost() {
 		setMsg("Salve a postagem primeiro para gerar o preview.", "err");
 		return;
 	}
+	// Salva o que ainda não foi salvo antes de abrir o preview
+	if (dirty) {
+		setMsg("Salvando as alterações antes de abrir o preview…", "info");
+		const ok = await save({ auto: true });
+		if (!ok) return;
+	}
 	if (current.post && current.post.draft) {
 		setMsg("Rascunho: visível agora no preview local (dev). Para publicar no site, desmarque 'Rascunho' e salve.", "info");
 	}
@@ -376,10 +395,54 @@ function collectPayload() {
 }
 
 
-async function save() {
+// ---- Auto-save (a cada 10s) e estado de salvamento ----
+function autoSavable() {
+	return $("f-title").value.trim() !== "" &&
+		$("f-description").value.trim() !== "" &&
+		$("f-date").value !== "" &&
+		$("f-content").value.trim() !== "";
+}
+function markDirty() {
+	dirty = true;
+	autoError = null;
+	updateSaveState();
+}
+function updateSaveState() {
+	const el = $("saveState");
+	if (!el) return;
+	if (autoSaving) {
+		el.textContent = "Salvando…";
+		return;
+	}
+	if (dirty) {
+		el.textContent = autoError
+			? "⚠️ Auto-save falhou: " + autoError
+			: "✏️ Alterações não salvas — auto-save a cada 10s.";
+		return;
+	}
+	el.textContent = lastSaveAt
+		? "💾 Salvo às " + lastSaveAt + " · auto-save a cada 10s"
+		: "⏱️ Auto-save a cada 10s.";
+}
+function startAutoSave() {
+	setInterval(() => maybeAutoSave(), 10000);
+}
+async function maybeAutoSave() {
+	if (!dirty || autoSaving) return;
+	// Post novo: só auto-cria quando houver dados mínimos (título, descrição, data e conteúdo)
+	if (!current && !autoSavable()) return;
+	autoSaving = true;
+	updateSaveState();
+	await save({ auto: true });
+	autoSaving = false;
+	updateSaveState();
+}
+
+async function save(opts = {}) {
+	const auto = !!opts.auto;
 	try {
 		const payload = collectPayload();
-		$("saveBtn").disabled = true;
+		if (!auto) $("saveBtn").disabled = true;
 		const { post, addedTags } = current
 			? await api("/api/posts/" + encodeURIComponent(current.slug), { method: "PUT", body: JSON.stringify(payload) })
 			: await api("/api/posts", { method: "POST", body: JSON.stringify(payload) });
@@ -390,10 +453,28 @@ async function save() {
 		$("f-slug").value = post.slug;
 		$("publishBtn").style.display = "";
 		$("deleteBtn").style.display = "";
-		setMsg("Salvo! Arquivo src/content/posts/" + post.slug + ".md gerado" +
-			(addedTags && addedTags.length ? " · tags novas: " + addedTags.join(", ") : "") + ".", "ok");
+		dirty = false;
+		autoError = null;
+		lastSaveAt = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+		updateSaveState();
+		if (!auto) {
+			setMsg("Salvo! Arquivo src/content/posts/" + post.slug + ".md gerado" +
+				(addedTags && addedTags.length ? " · tags novas: " + addedTags.join(", ") : "") + ".", "ok");
+		}
 		await refresh();
-	} catch (e) { setMsg(e.message, "err"); } finally { $("saveBtn").disabled = false; }
+		return true;
+	} catch (e) {
+		if (auto) {
+			autoError = e.message;
+			updateSaveState();
+		} else {
+			setMsg(e.message, "err");
+		}
+		dirty = true;
+		return false;
+	} finally {
+		if (!auto) $("saveBtn").disabled = false;
+	}
 }
 
 async function publish() {
@@ -422,12 +503,14 @@ async function remove() {
 
 // ---- Conteudo / toolbar / imagens ----
 function insertAtCursor(ta, text) {
+	markDirty();
 	const s = ta.selectionStart, e = ta.selectionEnd;
 	ta.value = ta.value.slice(0, s) + text + ta.value.slice(e);
 	ta.selectionStart = ta.selectionEnd = s + text.length;
 	ta.focus();
 }
 function wrapSelection(ta, before, after) {
+	markDirty();
 	const s = ta.selectionStart, e = ta.selectionEnd;
 	const sel = ta.value.slice(s, e) || "texto";
 	ta.value = ta.value.slice(0, s) + before + sel + after + ta.value.slice(e);
@@ -464,6 +547,7 @@ function stripLinePrefix(body, marker) {
 }
 // Aplica (ou remove) um prefixo no início da(s) linha(s) sob o cursor/seleção
 function prefixFormat(prefix, marker) {
+	markDirty();
 	const t = mta();
 	const v = t.value;
 	const s = t.selectionStart, e = t.selectionEnd;
@@ -510,6 +594,7 @@ function prefixFormat(prefix, marker) {
 }
 // Insere um bloco (lista de linhas) em linha própria, com separação
 function insertOwnBlock(blockLines, select) {
+	markDirty();
 	const t = mta();
 	const v = t.value;
 	const s = t.selectionStart;
@@ -534,6 +619,7 @@ function insertOwnBlock(blockLines, select) {
 	}
 }
 function formatLink() {
+	markDirty();
 	const t = mta();
 	const v = t.value;
 	const s = t.selectionStart, e = t.selectionEnd;
@@ -552,6 +638,7 @@ function formatLink() {
 	setCursor(t, a, b);
 }
 function snippetFormat(kind) {
+	markDirty();
 	if (kind === "link") return formatLink();
 	const t = mta();
 	const sel = t.value.slice(t.selectionStart, t.selectionEnd).trim();
@@ -607,6 +694,8 @@ $("f-imgFile").addEventListener("change", async (e) => {
 
 // ---- Eventos globais ----
 $("postForm").addEventListener("submit", (e) => { e.preventDefault(); save(); });
+$("postForm").addEventListener("input", markDirty);
+$("postForm").addEventListener("change", markDirty);
 $("publishBtn").onclick = publish;
 $("deleteBtn").onclick = remove;
 $("previewBtn").onclick = previewPost;
@@ -618,6 +707,7 @@ $("tokenBtn").onclick = () => {
 $("f-slug").addEventListener("input", () => { $("f-slug").dataset.manual = "1"; });
 $("f-title").addEventListener("input", () => { if (!$("f-slug").dataset.manual) $("f-slug").value = ""; });
 
+startAutoSave();
 resetForm();
 refresh();
 </script>
