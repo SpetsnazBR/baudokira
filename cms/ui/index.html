@@ -51,7 +51,12 @@
 	#msg.err { display:block; background:#331414; color:var(--danger); }
 	#msg.info { display:block; background:#1c2433; color:var(--ok); }
 	#coverPreview { max-width:180px; margin-top:.4rem; border-radius:6px; display:none; border:1px solid var(--border); }
-	.toolbar button { padding:.25rem .6rem; font-size:.8rem; margin-right:.3rem; background:#262626; }
+	.toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:.35rem .5rem; }
+	.toolbar .tb-label { font-size:.68rem; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+	.toolbar .tb-sep { width:1px; height:1.2em; background:var(--border); }
+	.toolbar button { padding:.22rem .6rem; font-size:.78rem; background:#262626; }
+	.toolbar button:hover { background:#333; }
+	.toolbar button b, .toolbar button i, .toolbar button s { font-style:normal; color:inherit; }
 	.tags-hint { font-size:.72rem; color:var(--muted); margin-top:.2rem; }
 	.publish-note { font-size:.72rem; color:var(--muted); margin-top:.3rem; }
 	.badge { font-size:.7rem; padding:.1rem .45rem; border-radius:20px; border:1px solid var(--border); color:var(--muted); }
@@ -102,13 +107,29 @@
 			<div class="check"><input type="checkbox" id="f-draft" checked /><label for="f-draft" style="margin:0">Rascunho (não publicar ainda)</label></div>
 			<div class="check"><input type="checkbox" id="f-updated" /><label for="f-updated" style="margin:0">Marcar como atualizado (updatedAt = agora)</label></div>
 			<label for="f-content">Conteúdo (Markdown) *</label>
-			<div class="toolbar">
-				<button type="button" data-md="## ">H2</button>
-				<button type="button" data-md="### ">H3</button>
-				<button type="button" data-wrap="**">negrito</button>
-				<button type="button" data-wrap="`">código</button>
-				<button type="button" data-link>link</button>
-				<button type="button" id="imgBtn">🖼️ inserir imagem</button>
+			<div class="toolbar" role="toolbar" aria-label="Formatação Markdown">
+				<span class="tb-label">Títulos</span>
+				<button type="button" data-prefix="# " data-marker="#" title="Título 1 (H1)">H1</button>
+				<button type="button" data-prefix="## " data-marker="##" title="Título 2 (H2)">H2</button>
+				<button type="button" data-prefix="### " data-marker="###" title="Título 3 (H3)">H3</button>
+				<button type="button" data-prefix="#### " data-marker="####" title="Título 4 (H4)">H4</button>
+				<button type="button" data-prefix="##### " data-marker="#####" title="Título 5 (H5)">H5</button>
+				<button type="button" data-prefix="###### " data-marker="######" title="Título 6 (H6)">H6</button>
+				<span class="tb-sep"></span>
+				<button type="button" data-wrap="**" title="Negrito (**negrito**)"><b>B</b></button>
+				<button type="button" data-wrap="*" title="Itálico (*itálico*)"><i>I</i></button>
+				<button type="button" data-wrap="~~" title="Riscado (~~texto~~)"><s>S</s></button>
+				<button type="button" data-wrap="`" title="Código inline (`código`)">código</button>
+				<button type="button" data-snippet="code" title="Bloco de código">bloco</button>
+				<button type="button" data-snippet="link" title="Link">link</button>
+				<button type="button" id="imgBtn" title="Inserir imagem do corpo do post">🖼️ imagem</button>
+				<span class="tb-sep"></span>
+				<button type="button" data-prefix="&gt; " data-marker="&gt;" title="Citação">citação</button>
+				<button type="button" data-prefix="- " data-marker="-" title="Lista com marcadores">lista</button>
+				<button type="button" data-prefix="1. " data-marker="1." title="Lista numerada">numerada</button>
+				<button type="button" data-prefix="- [ ] " data-marker="- [ ]" title="Lista de tarefas">tarefas</button>
+				<button type="button" data-snippet="hr" title="Linha horizontal">linha</button>
+				<button type="button" data-snippet="table" title="Tabela">tabela</button>
 				<input type="file" id="f-imgFile" accept="image/*" style="display:none" />
 			</div>
 			<textarea id="f-content" required placeholder="Escreva aqui em Markdown…"></textarea>
@@ -332,12 +353,148 @@ function wrapSelection(ta, before, after) {
 	ta.focus();
 }
 
-document.querySelectorAll(".toolbar [data-md]").forEach((b) =>
-	b.onclick = () => insertAtCursor($("f-content"), b.dataset.md));
+// ---- Formatação Markdown (toolbar) ----
+const mta = () => $("f-content");
+function setCursor(t, start, end) {
+	t.focus();
+	t.selectionStart = start;
+	t.selectionEnd = end === undefined ? start : end;
+}
+function escapeRe(s) {
+	return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+function isHeadingPrefix(marker) {
+	return /^#+$/.test(marker);
+}
+function lineHasPrefix(body, marker) {
+	if (isHeadingPrefix(marker)) {
+		const m = body.match(/^(#{1,6})(?=\s|$)/);
+		return !!m && m[1].length === marker.length;
+	}
+	return body.startsWith(marker);
+}
+function stripLinePrefix(body, marker) {
+	if (isHeadingPrefix(marker)) {
+		return body.replace(/^(#{1,6})[ \t]+/, "");
+	}
+	return body.replace(new RegExp("^" + escapeRe(marker) + "[ \\t]*"), "");
+}
+// Aplica (ou remove) um prefixo no início da(s) linha(s) sob o cursor/seleção
+function prefixFormat(prefix, marker) {
+	const t = mta();
+	const v = t.value;
+	const s = t.selectionStart, e = t.selectionEnd;
+	const ls = v.lastIndexOf("\n", Math.max(0, s - 1)) + 1;
+	let le = v.indexOf("\n", e);
+	if (le === -1) le = v.length;
+	const raw = v.slice(ls, le);
+	const multi = raw.includes("\n");
+	const lines = raw.split("\n");
+	// Linha em branco: apenas insere o prefixo (ex.: começar um título novo)
+	if (lines.length === 1 && lines[0].trim() === "") {
+		t.value = v.slice(0, ls) + prefix + v.slice(le);
+		setCursor(t, ls + prefix.length);
+		return;
+	}
+	const meaningful = lines.filter((l) => l.trim() !== "");
+	const allMarked = meaningful.length > 0 &&
+		meaningful.every((l) => lineHasPrefix(l.trimStart(), marker));
+	const out = lines.map((l) => {
+		const m = l.match(/^\s*/);
+		const indent = m ? m[0] : "";
+		const body = l.slice(indent.length);
+		if (body.trim() === "") return l;
+		if (allMarked && lineHasPrefix(body, marker)) return indent + stripLinePrefix(body, marker);
+		if (!allMarked) {
+			// Títulos: se a linha já é um heading de outro nível, converte para o nível clicado
+			if (isHeadingPrefix(marker) && /^(#{1,6})(?=\s|$)/.test(body)) {
+				if (lineHasPrefix(body, marker)) return l;
+				return indent + prefix + body.replace(/^(#{1,6})[ \t]+/, "");
+			}
+			if (!lineHasPrefix(body, marker)) return indent + prefix + body;
+		}
+		return l;
+	}).join("\n");
+	t.value = v.slice(0, ls) + out + v.slice(le);
+	const end = ls + out.length;
+	if (multi) {
+		setCursor(t, ls, end);
+	} else {
+		const delta = out.length - raw.length;
+		const rel = Math.max(0, s - ls);
+		setCursor(t, Math.min(Math.max(ls, ls + rel + delta), end));
+	}
+}
+// Insere um bloco (lista de linhas) em linha própria, com separação
+function insertOwnBlock(blockLines, select) {
+	const t = mta();
+	const v = t.value;
+	const s = t.selectionStart;
+	const ls = v.lastIndexOf("\n", Math.max(0, s - 1)) + 1;
+	let le = v.indexOf("\n", s);
+	if (le === -1) le = v.length;
+	const hasText = v.slice(ls, le).trim() !== "";
+	const at = hasText ? (le < v.length ? le + 1 : le) : ls;
+	const head = v.slice(0, at);
+	let lead;
+	if (head === "" || head.endsWith("\n\n")) lead = "";
+	else if (head.endsWith("\n")) lead = "\n";
+	else lead = "\n\n";
+	const block = blockLines.join("\n");
+	const text = lead + block + "\n";
+	t.value = v.slice(0, at) + text + v.slice(at);
+	const base = at + lead.length;
+	if (select) {
+		setCursor(t, base + select.at, base + select.at + select.len);
+	} else {
+		setCursor(t, base + block.length);
+	}
+}
+function formatLink() {
+	const t = mta();
+	const v = t.value;
+	const s = t.selectionStart, e = t.selectionEnd;
+	const sel = v.slice(s, e).trim();
+	let mark, a, b;
+	if (sel) {
+		mark = "[" + sel + "](https://url)";
+		a = s + mark.indexOf("url");
+		b = a + 3;
+	} else {
+		mark = "[texto](https://url)";
+		a = s + mark.indexOf("texto");
+		b = a + 5;
+	}
+	t.value = v.slice(0, s) + mark + v.slice(e);
+	setCursor(t, a, b);
+}
+function snippetFormat(kind) {
+	if (kind === "link") return formatLink();
+	const t = mta();
+	const sel = t.value.slice(t.selectionStart, t.selectionEnd).trim();
+	if (kind === "code") {
+		if (sel) {
+			const s = t.selectionStart, e = t.selectionEnd;
+			const wrapped = "```\n" + sel + "\n```";
+			t.value = t.value.slice(0, s) + wrapped + t.value.slice(e);
+			setCursor(t, s, s + wrapped.length);
+			return;
+		}
+		return insertOwnBlock(["```", "", "```"], { at: 4, len: 0 });
+	}
+	if (kind === "hr") return insertOwnBlock(["---"]);
+	if (kind === "table") {
+		const tb = ["| Coluna 1 | Coluna 2 | Coluna 3 |", "| --- | --- | --- |", "|  |  |  |"];
+		return insertOwnBlock(tb, { at: tb[0].indexOf("Coluna 1"), len: "Coluna 1".length });
+	}
+}
+
+document.querySelectorAll(".toolbar [data-prefix]").forEach((b) =>
+	b.onclick = () => prefixFormat(b.dataset.prefix, b.dataset.marker));
 document.querySelectorAll(".toolbar [data-wrap]").forEach((b) =>
-	b.onclick = () => wrapSelection($("f-content"), b.dataset.wrap, b.dataset.wrap));
-document.querySelector(".toolbar [data-link]").onclick = () =>
-	wrapSelection($("f-content"), "[texto](https://", ")");
+	b.onclick = () => wrapSelection(mta(), b.dataset.wrap, b.dataset.wrap));
+document.querySelectorAll(".toolbar [data-snippet]").forEach((b) =>
+	b.onclick = () => snippetFormat(b.dataset.snippet));
 
 $("f-coverFile").addEventListener("change", async (e) => {
 	const file = e.target.files[0];
