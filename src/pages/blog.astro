@@ -13,10 +13,11 @@ interface LocalTag {
 	id: string;
 }
 
-// Buscar posts locais (MDX)
+// Buscar posts locais (MDX). Em DEV rascunhos aparecem (preview local);
+// em produção apenas posts publicados entram no site.
 const allPosts = await getCollection(
 	"posts",
-	(post) => post.data.draft !== true,
+	(post) => import.meta.env.DEV || post.data.draft !== true,
 );
 
 // Extrair tags de todos os posts

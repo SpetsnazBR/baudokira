@@ -10,3 +10,14 @@ export const base = import.meta.env.BASE_URL;
 export function formatDate(date: Date): string {
 	return date.toLocaleDateString();
 }
+
+/** Formata data + hora em pt-BR (ex.: 7 de setembro de 2026, 12:00). */
+export function formatDateTime(date: Date): string {
+	return new Intl.DateTimeFormat("pt-BR", {
+		day: "2-digit",
+		month: "long",
+		year: "numeric",
+		hour: "2-digit",
+		minute: "2-digit",
+	}).format(date);
+}
