@@ -1,5 +1,23 @@
 [
 	{
 		"id": "guide"
+	},
+	{
+		"id": "inicio"
+	},
+	{
+		"id": "internet"
+	},
+	{
+		"id": "livros"
+	},
+	{
+		"id": "musica"
+	},
+	{
+		"id": "projeto"
+	},
+	{
+		"id": "reflexoes"
 	}
 ]
