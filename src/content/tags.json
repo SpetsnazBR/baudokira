@@ -1,9 +1,18 @@
 [
 	{
+		"id": "espionagem"
+	},
+	{
 		"id": "guide"
 	},
 	{
+		"id": "ia"
+	},
+	{
 		"id": "inicio"
+	},
+	{
+		"id": "inteligencia-artificial"
 	},
 	{
 		"id": "internet"
@@ -16,6 +25,9 @@
 	},
 	{
 		"id": "projeto"
+	},
+	{
+		"id": "recomendacoes"
 	},
 	{
 		"id": "reflexoes"
