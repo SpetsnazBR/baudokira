@@ -2,6 +2,7 @@
 title: "Trend dos anos 80, vigilância global e o uso de dados biométricos"
 description: "Breve reflexão sobre a mais nova trend na internet e o uso massivo de dados para alimentar modelos de IA"
 createdAt: 2026-09-08T13:00:00-03:00
+updatedAt: 2026-09-08T13:14:00-03:00
 tags: ["inteligencia-artificial","ia","espionagem","internet","livros","reflexoes","recomendacoes"]
 draft: false
 image: "../assets/trend-dos-anos-80-vigilancia-global-e-o-uso-de-dados-biometricos-cover.webp"
