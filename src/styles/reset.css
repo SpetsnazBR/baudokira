@@ -1,6 +1,10 @@
+/* As fontes vivem em public/fonts. URLs de assets do public/ precisam incluir o
+ * base (deploy em subpath). O Astro exige isso no dev (senão: "[ERROR] [router]
+ * Request URLs for public/ assets must also include your base"). O build também
+ * prefixa o base, então use o MESMO caminho de astro.config.ts (base) aqui. */
 @font-face {
 	font-family: "Geist";
-	src: url("/fonts/Geist.woff2") format("woff2");
+	src: url("/baudokira/fonts/Geist.woff2") format("woff2");
 	font-weight: 100 900;
 	font-style: normal;
 	font-display: swap;
@@ -8,7 +12,7 @@
 
 @font-face {
 	font-family: "Geist Mono";
-	src: url("/fonts/GeistMono.woff2") format("woff2");
+	src: url("/baudokira/fonts/GeistMono.woff2") format("woff2");
 	font-weight: 100 900;
 	font-style: normal;
 	font-display: swap;
