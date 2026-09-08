@@ -177,6 +177,7 @@ let astroCfg = { url: "http://localhost:3334", base: "/baudokira" };
 // Estado do auto-save
 let dirty = false; // há alterações ainda não salvas
 let autoSaving = false; // um auto-save está em andamento
+let publishing = false; // um publish está em andamento (bloqueia auto-save)
 let autoError = null; // última falha do auto-save (para exibir)
 let lastSaveAt = null; // horário do último salvamento
 
@@ -451,7 +452,7 @@ function startAutoSave() {
 	setInterval(() => maybeAutoSave(), 10000);
 }
 async function maybeAutoSave() {
-	if (!dirty || autoSaving) return;
+	if (!dirty || autoSaving || publishing) return;
 	// Post novo: só auto-cria quando houver dados mínimos (título, descrição, data e conteúdo)
 	if (!current && !autoSavable()) return;
 	autoSaving = true;
@@ -502,15 +503,28 @@ async function save(opts = {}) {
 
 async function publish() {
 	if (!current) return;
+	publishing = true;
 	try {
 		$("publishBtn").disabled = true;
+		$("saveBtn").disabled = true;
+		// 1. Se houver auto-save em andamento, espera terminar.
+		while (autoSaving) await new Promise((resolve) => setTimeout(resolve, 100));
+		// 2. Publica SEMPRE a versão atual do editor: um save pendente é gravado
+		//    no .md ANTES do commit. Sem isso, um auto-save posterior (a cada 10s)
+		//    reescreveria o arquivo depois do commit e deixaria a working tree suja.
+		if (dirty) {
+			const ok = await save();
+			if (!ok) return; // save falhou: não publica uma versão antiga por engano
+		}
+		// 3. Commit (e push se CMS_AUTO_PUSH=1).
 		const r = await api("/api/posts/" + encodeURIComponent(current.slug) + "/publish", { method: "POST" });
 		const msg = r.published.committed
 			? (r.published.pushed ? "Commit + push OK - deploy automatico iniciado!" : "Commit local OK. Faca o push quando quiser (CMS_AUTO_PUSH=0).")
 			: "Nada novo para commitar (post ja estava publicado).";
 		setMsg(msg, "ok");
+		dirty = false; // evita auto-save logo após o publish
 		await refresh();
-	} catch (e) { setMsg(e.message, "err"); } finally { $("publishBtn").disabled = false; }
+	} catch (e) { setMsg(e.message, "err"); } finally { $("publishBtn").disabled = false; $("saveBtn").disabled = false; publishing = false; }
 }
 
 async function remove() {
