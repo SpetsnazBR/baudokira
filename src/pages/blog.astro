@@ -6,7 +6,7 @@ import { openGraph } from "spectre:globals";
 import Card from "../components/Card.astro";
 import Icon from "../components/Icon.astro";
 import Layout from "../layouts/Layout.astro";
-import { base } from "../lib/site";
+import { base, formatDate } from "../lib/site";
 
 // Tipo para tags no formato local
 interface LocalTag {
@@ -59,7 +59,7 @@ const tags = allPosts.flatMap((post) =>
 					<a href={`${base}blog/${post.id}`} class="post-container" data-tags={post.data.tags.map((tag: LocalTag) => tag.id).join(",")}>
 						<div class="post-header">
 							<h3>{post.data.title}</h3>
-							<span class="post-date">{post.data.createdAt.toLocaleDateString()}</span>
+							<span class="post-date">{formatDate(post.data.createdAt)}</span>
 						</div>
 						<span>{post.data.description}</span>
 					</a>

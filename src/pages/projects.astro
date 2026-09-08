@@ -6,7 +6,7 @@ import { openGraph } from "spectre:globals";
 import Card from "../components/Card.astro";
 import Icon from "../components/Icon.astro";
 import Layout from "../layouts/Layout.astro";
-import { base } from "../lib/site";
+import { base, formatDate } from "../lib/site";
 
 const projects = await getCollection("projects");
 ---
@@ -37,7 +37,7 @@ const projects = await getCollection("projects");
 					<a href={`${base}projects/${post.id}`} class="post-container">
 						<div class="post-header">
 							<h3>{post.data.title}</h3>
-							<span class="post-date">{post.data.date.toLocaleDateString()}</span>
+							<span class="post-date">{formatDate(post.data.date)}</span>
 						</div>
 						<span>{post.data.description}</span>
 					</a>

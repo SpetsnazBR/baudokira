@@ -8,7 +8,7 @@ import Card from "../../components/Card.astro";
 import Icon from "../../components/Icon.astro";
 import ImageGlow from "../../components/ImageGlow.astro";
 import Layout from "../../layouts/Layout.astro";
-import { base } from "../../lib/site";
+import { base, formatDate } from "../../lib/site";
 
 interface Props {
 	project: CollectionEntry<"projects">;
@@ -80,7 +80,7 @@ const { Content } = await render(project);
 						<h1 class="no-mt article-h1">{project.data.title}</h1>
 					</div>
 					<div class="article-info">
-						<span>{project.data.date.toLocaleDateString()}</span>
+						<span>{formatDate(project.data.date)}</span>
 					</div>
 				</div>
 			</div>
