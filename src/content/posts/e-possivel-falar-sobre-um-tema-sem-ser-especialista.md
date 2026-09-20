@@ -3,7 +3,7 @@ title: "É possível falar sobre um tema sem ser especialista?"
 description: "Os intensos debates na internet e os formadores de fatos da vida, baseado em \"vozes da cabeça\", são validadores de fatos concretos? E onde a política entra nisso?"
 createdAt: 2026-09-20T01:30:00-03:00
 tags: ["reflexoes","internet","politica","fake-news","geopolitica"]
-draft: true
+draft: false
 image: "../assets/e-possivel-falar-sobre-um-tema-sem-ser-especialista-cover.webp"
 ---
 
