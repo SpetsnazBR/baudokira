@@ -3,6 +3,12 @@
 		"id": "espionagem"
 	},
 	{
+		"id": "fake-news"
+	},
+	{
+		"id": "geopolitica"
+	},
+	{
 		"id": "guide"
 	},
 	{
@@ -22,6 +28,9 @@
 	},
 	{
 		"id": "musica"
+	},
+	{
+		"id": "politica"
 	},
 	{
 		"id": "projeto"
