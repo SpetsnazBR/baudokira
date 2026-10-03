@@ -14,7 +14,10 @@ import { base, formatDate } from "../lib/site";
 // local); no build de produção, apenas posts publicados.
 const [posts, projects, about, workExperience, quickInfo, socials] =
 	await Promise.all([
-		getCollection("posts", (post) => import.meta.env.DEV || post.data.draft !== true),
+		getCollection(
+			"posts",
+			(post) => import.meta.env.DEV || post.data.draft !== true,
+		),
 		getCollection("projects"),
 		getEntry("other", "about"),
 		getCollection("workExperience"),

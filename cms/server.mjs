@@ -1,8 +1,8 @@
 import { createServer } from "node:http";
-import { readFileSync, realpathSync } from "node:fs";
+import { chmodSync, mkdirSync, readFileSync, realpathSync } from "node:fs";
 import { basename, extname, join, sep } from "node:path";
 import { timingSafeEqual } from "node:crypto";
-import { ASSETS_DIR, CMS_DIR, DATA_DIR, env } from "./lib/config.mjs";
+import { ASSETS_DIR, CMS_DIR, DATA_DIR, ENV_FILE, env } from "./lib/config.mjs";
 import * as db from "./lib/db.mjs";
 import * as content from "./lib/content.mjs";
 import * as git from "./lib/git.mjs";
@@ -21,10 +21,28 @@ const MIME = {
 const MAX_BODY = 20 * 1024 * 1024; // 20 MB
 
 // ---- Helpers HTTP ----
+// CSP do painel: bloqueia scripts/handlers injetados (sem 'unsafe-eval').
+// 'unsafe-inline' so em style-src (atributos style= dos elementos existentes).
+const CSP = [
+	"default-src 'self'",
+	"script-src 'self'",
+	"style-src 'self' 'unsafe-inline'",
+	"img-src 'self' data: blob:",
+	"font-src 'self'",
+	"connect-src 'self' http://localhost:3334 http://127.0.0.1:3334",
+	"form-action 'self'",
+	"base-uri 'none'",
+	"frame-ancestors 'none'",
+	"object-src 'none'",
+].join("; ");
+
 const SECURITY_HEADERS = {
 	"X-Content-Type-Options": "nosniff",
 	"X-Frame-Options": "DENY",
 	"Referrer-Policy": "no-referrer",
+	"Content-Security-Policy": CSP,
+	"Cross-Origin-Opener-Policy": "same-origin",
+	"Cross-Origin-Resource-Policy": "same-origin",
 }
 
 function send(res, status, body, type = "application/json; charset=utf-8") {
@@ -356,16 +374,49 @@ return sendError(res, 404, "Rota nao encontrada.");
 }
 
 // ---- Servidor ----
-const UI_PATH = join(CMS_DIR, "ui", "index.html");
+const UI_DIR = join(CMS_DIR, "ui");
+const UI_PATH = join(UI_DIR, "index.html");
+const UI_MIME = {
+	".html": "text/html; charset=utf-8",
+	".js": "text/javascript; charset=utf-8",
+	".css": "text/css; charset=utf-8",
+	".woff2": "font/woff2",
+	".svg": "image/svg+xml",
+};
 let uiCache = null;
+
+// Serve HTML/JS do painel (mesma origem). HTML e app.js sao cacheados.
+function serveUi(res, file) {
+	if (uiCache === null) {
+		uiCache = {
+			"index.html": readFileSync(UI_PATH, "utf8"),
+			"app.js": readFileSync(join(UI_DIR, "app.js"), "utf8"),
+		};
+	}
+	const type = UI_MIME[extname(file)] || "application/octet-stream";
+	return send(res, 200, uiCache[file], type);
+}
+
+// Endurecimento de permissoes (idempotente, melhor-esforco):
+// cms/.env guarda o segredo CMS_TOKEN; cms/data guarda banco e uploads.
+try {
+	chmodSync(ENV_FILE, 0o600);
+	chmodSync(DATA_DIR, 0o700);
+	mkdirSync(join(DATA_DIR, "uploads"), { recursive: true });
+	chmodSync(join(DATA_DIR, "uploads"), 0o700);
+} catch {
+	// Sistema de arquivos sem suporte (ex.: Windows): segue sem quebrar.
+}
 
 const server = createServer(async (req, res) => {
 	const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
 	try {
-		// Painel web
+		// Painel web (HTML + asset JS do painel)
 		if (url.pathname === "/" || url.pathname === "/index.html") {
-			if (uiCache === null) uiCache = readFileSync(UI_PATH, "utf8");
-			return send(res, 200, uiCache, "text/html; charset=utf-8");
+			return serveUi(res, "index.html");
+		}
+		if (url.pathname === "/ui/app.js") {
+			return serveUi(res, "app.js");
 		}
 		await handle(req, res, url);
 	} catch (err) {
