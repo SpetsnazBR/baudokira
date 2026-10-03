@@ -15,6 +15,7 @@ Um blog pessoal minimalista inspirado em terminal, construído com [Astro](https
 - 🗺️ **Sitemap automático** - SEO otimizado
 - 📦 **Content Collections** - Posts e projetos organizados
 - 🔒 **TypeScript** - Código type-safe
+- 📝 **CMS local** - Sistema de publicação próprio com painel web, SQLite e zero dependências (`cms/`)
 
 ## 🚀 Começando
 
@@ -48,12 +49,19 @@ fund=false
 ## 📁 Estrutura do Projeto
 
 ```
+├── cms/                   # CMS local (painel web + API REST + SQLite)
+│   ├── lib/               # Módulos do servidor (config, db, content, git, slug)
+│   ├── ui/                # Interface web (index.html + app.js)
+│   ├── .env.example       # Exemplo de configuração (token, auto-push)
+│   ├── server.mjs         # Servidor HTTP (node:http, zero deps)
+│   └── README.md          # Documentação detalhada do CMS
 ├── public/                # Arquivos estáticos (favicon, fontes, imagens OG)
 ├── package/               # Integração Spectre (módulo virtual "spectre:globals")
 │   └── src/               # Código-fonte da integração (Zod + plugin Vite)
 ├── src/
 │   ├── components/        # Componentes Astro (Card, Icon, Navbar, ...)
-│   ├── content/           # Conteúdo local (MDX/JSON)
+│   ├── content/           # Conteúdo local (MD, MDX, JSON)
+│   │   ├── assets/        # Imagens de capa e corpo dos posts
 │   │   ├── other/         # Página sobre
 │   │   └── projects/      # Projetos
 │   ├── layouts/           # Layout principal
@@ -64,11 +72,28 @@ fund=false
 ├── tests/                 # Testes unitários (node:test)
 ├── .npmrc                 # Configuração npm (cache contido no projeto)
 ├── astro.config.ts        # Configuração do Astro
+├── CLAUDE.md              # Regras do projeto para IA agentes
 ├── package.json
+├── RELEASES.md            # Política de versionamento e releases
+├── SECURITY.md            # Política de segurança do projeto
 └── tsconfig.json
 ```
 
 ## 📝 Criando Posts
+
+### Via CMS local (recomendado)
+
+O projeto inclui um **sistema de publicação próprio** em `cms/` com painel web, SQLite e zero dependências externas:
+
+```bash
+npm run cms
+```
+
+Acesse o painel em **http://127.0.0.1:4444/**, preencha os campos (título, descrição, tags, conteúdo Markdown, capa) e clique em "Salvar". O CMS gera automaticamente o arquivo `.md` em `src/content/posts/` e sincroniza tags e imagens.
+
+> Para detalhes completos, consulte [`cms/README.md`](./cms/README.md).
+
+### Manualmente (via arquivo MD/MDX)
 
 Crie um arquivo em `src/content/posts/` seguindo o formato:
 
@@ -105,6 +130,7 @@ O projeto usa o **test runner nativo do Node.js** (`node:test`) — sem dependê
 
 | Comando | Descrição |
 |---------|-----------|
+| `npm run cms` | Inicia o CMS local (painel em http://127.0.0.1:4444) |
 | `npm run dev` | Inicia servidor de desenvolvimento |
 | `npm run build` | Build estático para produção |
 | `npm run start` | Preview do build estático (alias de `preview`) |
@@ -199,9 +225,11 @@ chmod +x run-servers.sh test-servers.sh
    npm test
    ```
 
-3. **Iniciar desenvolvimento:**
+3. **Iniciar desenvolvimento e CMS (opcional):**
    ```bash
-   ./run-servers.sh
+   ./run-servers.sh                    # Inicia servidor Astro
+   # Em outro terminal, se quiser usar o CMS:
+   npm run cms                         # Painel em http://127.0.0.1:4444
    # Ou para desenvolvimento rápido:
    ./run-servers.sh --no-check
    ```
@@ -230,6 +258,10 @@ Toda **funcionalidade nova** implementada no projeto deve ser registrada na seç
 **Releases** do repositório, com a descrição do que foi alterado/implementado e o
 número da versão. O processo, o versionamento (SemVer) e a automação estão descritos
 em [`RELEASES.md`](./RELEASES.md).
+
+## 🔒 Segurança
+
+Reporte vulnerabilidades seguindo a política descrita em [`SECURITY.md`](./SECURITY.md).
 
 ## 🚀 Deploy (GitHub Pages)
 
