@@ -3,7 +3,7 @@ title: "Oposição hoje, oposição amanhã!"
 description: "Passado o primeiro turno das eleições, compartilho minhas reflexões sobre o avanço da extrema-direita e o risco real que ela representa para a nossa democracia."
 createdAt: 2026-10-11T20:00:00-03:00
 tags: ["eleicoes","democracia","livros","recomendacoes"]
-draft: true
+draft: false
 image: "../assets/oposicao-hoje-oposicao-amanha-cover.webp"
 ---
 
