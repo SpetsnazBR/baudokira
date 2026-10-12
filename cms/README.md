@@ -42,8 +42,12 @@ Painel: **http://127.0.0.1:4444/**
 - 😊 **Emojis**: botão "😊 Emojis" logo abaixo de "Conteúdo (Markdown)" abre um
   seletor com emojis organizados por categoria — clique para inserir na posição do
   cursor (e o auto-save guarda).
-- 🚀 Botão **Publicar** faz `git add`+`git commit` do conteúdo (e `git push`
-  se `CMS_AUTO_PUSH=1`).
+- 🚀 Botão **"Publicar no GitHub"** publica de verdade num clique: salva a
+  versão atual do editor, **desmarca o rascunho automaticamente** (se ainda
+  estava marcado), gera o `.md` com `draft: false`, faz `git add`+`git commit`
+  e `git push` — o deploy no GitHub Pages dispara sozinho. O git roda de forma
+  assíncrona com timeouts e sem prompts interativos: se faltar credencial, o
+  painel mostra o erro na hora (o servidor nunca fica travado esperando senha).
 
 ## Campos (mesmos exigidos pelo blog)
 
@@ -70,5 +74,5 @@ Imagem de capa, Conteúdo em Markdown *, "Marcar como atualizado".
 
 - Se `npm run dev` do Astro estiver rodando, o post novo já aparece no
   navegador (hot-reload) ao salvar.
-- Para publicar de verdade no GitHub Pages: botão "Publicar no GitHub"
-  (commit) e depois `git push` (ou ligue `CMS_AUTO_PUSH=1`).
+- Para publicar de verdade no GitHub Pages: clique no botão **"Publicar no
+  GitHub"** — ele commita e envia o push automaticamente (deploy disparado).

@@ -335,9 +335,12 @@ async function save(opts = {}) {
 async function publish() {
 	if (!current) return;
 	publishing = true;
+	const btn = $("publishBtn");
+	const originalLabel = btn.textContent;
+	btn.disabled = true;
+	btn.textContent = "Publicando… (commit + push)";
+	$("saveBtn").disabled = true;
 	try {
-		$("publishBtn").disabled = true;
-		$("saveBtn").disabled = true;
 		// 1. Se houver auto-save em andamento, espera terminar.
 		while (autoSaving) await new Promise((resolve) => setTimeout(resolve, 100));
 		// 2. Publica SEMPRE a versão atual do editor: um save pendente é gravado
@@ -345,17 +348,21 @@ async function publish() {
 		//    reescreveria o arquivo depois do commit e deixaria a working tree suja.
 		if (dirty) {
 			const ok = await save();
-			if (!ok) return; // save falhou: não publica uma versão antiga por engano
+			if (!ok) return;
 		}
-		// 3. Commit (e push se CMS_AUTO_PUSH=1).
+		// 3. Commit + push ("Publicar no GitHub" sempre publica e sincroniza).
 		const r = await api("/api/posts/" + encodeURIComponent(current.slug) + "/publish", { method: "POST" });
-		const msg = r.published.committed
-			? (r.published.pushed ? "Commit + push OK - deploy automatico iniciado!" : "Commit local OK. Faca o push quando quiser (CMS_AUTO_PUSH=0).")
-			: "Nada novo para commitar (post ja estava publicado).";
+		const p = r.published || {};
+		let msg;
+		if (p.committed && p.pushed) msg = "✓ Publicado! Commit + push feitos — deploy (GitHub Pages) iniciado.";
+		else if (p.committed) msg = "✓ Commit feito no git local.";
+		else if (p.pushed) msg = "✓ Já estava publicado; push feito para o GitHub.";
+		else msg = "Post já publicado e sem mudanças pendentes.";
+		if (r.clearedDraft) msg += " Rascunho desmarcado — post agora é público.";
 		setMsg(msg, "ok");
-		dirty = false; // evita auto-save logo após o publish
+		dirty = false;
 		await refresh();
-	} catch (e) { setMsg(e.message, "err"); } finally { $("publishBtn").disabled = false; $("saveBtn").disabled = false; publishing = false; }
+	} catch (e) { setMsg(e.message, "err"); } finally { publishing = false; btn.disabled = false; btn.textContent = originalLabel; $("saveBtn").disabled = false; }
 }
 
 async function remove() {

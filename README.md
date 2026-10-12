@@ -52,7 +52,7 @@ fund=false
 ├── cms/                   # CMS local (painel web + API REST + SQLite)
 │   ├── lib/               # Módulos do servidor (config, db, content, git, slug)
 │   ├── ui/                # Interface web (index.html + app.js)
-│   ├── .env.example       # Exemplo de configuração (token, auto-push)
+│   ├── .env.example       # Exemplo de configuração (token, host, preview)
 │   ├── server.mjs         # Servidor HTTP (node:http, zero deps)
 │   └── README.md          # Documentação detalhada do CMS
 ├── public/                # Arquivos estáticos (favicon, fontes, imagens OG)

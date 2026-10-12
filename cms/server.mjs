@@ -258,7 +258,7 @@ async function handle(req, res, url) {
 	// GET /api/status (git + astro preview)
 	if (req.method === "GET" && url.pathname === "/api/status") {
 		return send(res, 200, {
-			...git.statusInfo(),
+			...(await git.statusInfo()),
 			astro: { url: env.astroUrl, base: env.astroBase },
 		});
 	}
@@ -290,14 +290,33 @@ preview: `/api/assets/${encodeURIComponent(file)}`,
 });
 }
 
-// POST /api/posts/:slug/publish
+// POST /api/posts/:slug/publish — publica de verdade no GitHub.
+// Garante que o post sai do rascunho (draft: false), reescreve o .md,
+// faz commit e push automático (deploy no GitHub Pages). O fluxo é
+// assíncrono com timeouts, então jamais deixa o servidor travado.
 const pubMatch = url.pathname.match(/^\/api\/posts\/([^/]+)\/publish$/);
 if (req.method === "POST" && pubMatch) {
-const slug = decodeURIComponent(pubMatch[1]);
-const post = db.getPost(slug);
-if (!post) return sendError(res, 404, "Post nao encontrado.");
-const result = git.publishPost(post);
-return send(res, 200, { published: result, git: git.statusInfo() });
+	const slug = decodeURIComponent(pubMatch[1]);
+	let post = db.getPost(slug);
+	if (!post) return sendError(res, 404, "Post nao encontrado.");
+
+	// Publicar = tornar público: se ainda era rascunho, limpa o flag no banco
+	// e regrava o .md ANTES do commit (senão o post iria com draft: true e
+	// sumiria do site, como aconteceu com a publicação manual).
+	let clearedDraft = false;
+	if (post.draft) {
+		post = db.updatePost(post.slug, { ...post, draft: false });
+		content.writePostFile(post.slug, content.buildPostMarkdown(post));
+		clearedDraft = true;
+	}
+
+	try {
+		const result = await git.publishPost(post);
+		return send(res, 200, { published: result, clearedDraft, git: await git.statusInfo() });
+	} catch (err) {
+		// Erro de git (credenciais/timeout/etc.): mensagem acionável, não "Erro interno."
+		return sendError(res, 422, err.message);
+	}
 }
 
 // /api/posts/:slug (GET/PUT/DELETE)
@@ -437,7 +456,7 @@ server.listen(env.port, env.host, () => {
 	console.log(`  Banco    : SQLite (${DATA_DIR})`);
 	console.log(`  Token    : OBRIGATÓRIO — valor em cms/.env (CMS_TOKEN)`);
 	console.log(`  RateLimit: ${RL_GENERAL} req/min e ${RL_WRITE} mutações/min por IP`);
-	console.log(`  AutoPush : ${env.autoPush ? "LIGADO (faz git push)" : "desligado (só commit local)"}`);
+	console.log(`  Publicar : botão \"Publicar no GitHub\" faz commit + push automático`);
 	console.log(`  Conteúdo : src/content/ (posts/ + assets/ + tags.json)`);
 	console.log("  =============================================");
 });
