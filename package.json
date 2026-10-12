@@ -1,7 +1,7 @@
 {
 	"name": "spectre",
 	"type": "module",
-	"version": "1.9.0",
+	"version": "1.9.1",
 	"scripts": {
 		"dev": "astro dev",
 		"build": "astro build",
@@ -34,5 +34,8 @@
 		"shiki": "^1.26.1",
 		"typescript": "^5.9.2",
 		"vite": "^7.3.6"
+	},
+	"overrides": {
+		"postcss-selector-parser": "7.1.6"
 	}
 }
